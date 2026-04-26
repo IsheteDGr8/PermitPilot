@@ -195,12 +195,39 @@ function DualStartFlow() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '500px' }}>
 
           {isProcessing ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '3rem' }}>
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }} style={{ display: 'inline-block', marginBottom: '1.5rem' }}>
-                <Plane size={48} style={{ color: 'var(--color-accent)' }} />
-              </motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+              <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '2.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {sidebarAgents.map((a, i) => {
+                  const Icon = (agentIcons && agentIcons[a.iconKey as keyof typeof agentIcons]) || Sparkles;
+                  return (
+                    <motion.div
+                      key={a.name}
+                      animate={{
+                        y: [0, -12, 0],
+                        opacity: [0.4, 1, 0.4],
+                        borderColor: ['var(--color-border)', 'var(--color-accent)', 'var(--color-border)']
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        delay: i * 0.15,
+                        ease: "easeInOut"
+                      }}
+                      style={{
+                        width: '60px', height: '60px', borderRadius: 'var(--radius-md)',
+                        background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
+                        display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      <Icon size={26} style={{ color: 'var(--color-accent)' }} />
+                    </motion.div>
+                  )
+                })}
+              </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>{statusText}</h2>
-              <p style={{ color: 'var(--color-text-secondary)' }}>Five AI agents are analyzing your application in parallel.</p>
+              <p style={{ color: 'var(--color-text-secondary)', maxWidth: '400px', margin: '0 auto', fontSize: '0.95rem' }}>
+                Our municipal AI agents are evaluating your project against local zoning, fire, health, and building codes.
+              </p>
             </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
