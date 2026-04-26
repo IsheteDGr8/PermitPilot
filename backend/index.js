@@ -45,7 +45,10 @@ app.post('/api/parse-intake', async (req, res) => {
     const { description } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // We force Gemini to return strict JSON matching your exact schema
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is missing from backend/.env.local");
+    }
+
     const prompt = `You are a data extraction AI. Read the user's business description and extract the details into the following strict JSON schema. If the user does not specify a detail, infer a logical default based on context.
     {
       "business_name": "String (invent a fun one if not provided)",
@@ -67,6 +70,13 @@ app.post('/api/parse-intake', async (req, res) => {
     });
 
     const data = await response.json();
+
+    // FIXED: Safely check if Gemini actually returned candidates
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error(`  [❌] Gemini API Error Response:`, JSON.stringify(data, null, 2));
+      return res.status(502).json({ error: "Gemini API rejected the request. Check backend console." });
+    }
+
     let rawText = data.candidates[0].content.parts[0].text;
 
     // Clean up any accidental markdown formatting
