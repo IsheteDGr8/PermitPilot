@@ -65,3 +65,19 @@ export async function updateApplication(appId: string, updates: Partial<Evaluati
   if (!res.ok) throw new Error(`Failed to update: ${res.status}`);
   return res.json();
 }
+
+/**
+ * Send a user resolution to a specific agent to clear a conflict.
+ */
+export async function resolveConflict(intakeData: any, agentName: string, resolution: string) {
+  const res = await fetch(`${API_BASE}/resolve-conflict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ intakeData, agentName, resolution })
+  });
+
+  if (!res.ok) {
+    throw new Error(`Resolution failed: ${res.status}`);
+  }
+  return res.json();
+}

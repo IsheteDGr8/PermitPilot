@@ -269,6 +269,44 @@ app.delete('/api/applications/:id', async (req, res) => {
   }
 });
 
+// [NEW] Single-Agent Re-evaluation Route
+app.post('/api/resolve-conflict', async (req, res) => {
+  const { intakeData, agentName, resolution } = req.body;
+  console.log(`\n[🔄] Resolving conflict for ${agentName}...`);
+
+  try {
+    // 1. Inject the user's resolution into the payload so the AI reads it
+    if (!intakeData.user_resolutions) intakeData.user_resolutions = {};
+    intakeData.user_resolutions[agentName] = resolution;
+
+    // 2. Define the target agent
+    const allAgents = [
+      { name: 'Zoning Authority', role: 'Evaluate land use and zoning compliance', codeFile: 'zoning_code.json', iconKey: 'zoning' },
+      { name: 'Health Department', role: 'Evaluate food safety and sanitation', codeFile: 'health_code.json', iconKey: 'health' },
+      { name: 'Fire Marshal', role: 'Evaluate fire hazards and safety protocols', codeFile: 'fire_code.json', iconKey: 'fire' },
+      { name: 'Building Department', role: 'Evaluate structural changes and ADA access', codeFile: 'building_code.json', iconKey: 'building' },
+      { name: 'Business Licensing', role: 'Evaluate local business licenses', codeFile: 'business_code.json', iconKey: 'licensing' }
+    ];
+    const target = allAgents.find(a => a.name === agentName);
+
+    if (!target) throw new Error("Agent not found");
+
+    // 3. Re-run JUST this one agent
+    const evaluateWithGemini = require('./utils/gemini');
+    const rawResult = await evaluateWithGemini(target.name, target.role, intakeData, target.codeFile);
+
+    // Attach the icon key so the frontend renders it correctly
+    const updatedAgentResult = { ...rawResult, iconKey: target.iconKey };
+
+    console.log(`  [✅] ${agentName} re-evaluated successfully!`);
+    res.json(updatedAgentResult);
+
+  } catch (err) {
+    console.error(`  [❌] Re-evaluation failed:`, err.message);
+    res.status(500).json({ error: "Failed to resolve conflict." });
+  }
+});
+
 app.patch('/api/applications/:id', async (req, res) => {
   console.log(`\n[💾] Saving checklist updates for application: ${req.params.id}`);
   try {

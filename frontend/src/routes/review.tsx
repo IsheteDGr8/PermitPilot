@@ -29,6 +29,9 @@ function ReviewPage() {
   const [result, setResult] = useState<EvaluationResponse | null>(null)
   const [intake, setIntake] = useState<IntakeData | null>(null)
   const [expandedAgents, setExpandedAgents] = useState<Set<number>>(new Set())
+  // NEW STATES:
+  const [resolvingAgent, setResolvingAgent] = useState<string | null>(null)
+  const [resolutionText, setResolutionText] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const savedResult = localStorage.getItem('permitResult')
@@ -68,6 +71,38 @@ function ReviewPage() {
       await updateApplication(result.application_id, { checklist: newChecklist });
     } catch (error) {
       console.error("Failed to save checklist progress:", error);
+    }
+  }
+
+  // --- RESOLVE CONFLICT LOGIC ---
+  const handleResolve = async (agentName: string) => {
+    if (!result || !intake || !resolutionText[agentName]) return;
+    setResolvingAgent(agentName);
+
+    try {
+      const resolution = resolutionText[agentName];
+      const { resolveConflict } = await import('@/lib/api'); // Dynamic import
+
+      // Call our surgical backend route
+      const updatedAgent = await resolveConflict(intake, agentName, resolution);
+
+      // Swap the old agent data with the newly approved agent data!
+      const newAgents = result.agents.map(a => a.agent === agentName ? updatedAgent : a);
+      const newResult = { ...result, agents: newAgents };
+      setResult(newResult);
+      localStorage.setItem('permitResult', JSON.stringify(newResult));
+
+      // Save the resolution context into the intake payload for future saves
+      const newIntake = { ...intake, user_resolutions: { ...(intake as any).user_resolutions, [agentName]: resolution } };
+      setIntake(newIntake);
+      localStorage.setItem('permitIntake', JSON.stringify(newIntake));
+
+      // Clear the text box
+      setResolutionText(prev => ({ ...prev, [agentName]: '' }));
+    } catch (error) {
+      console.error("Failed to resolve:", error);
+    } finally {
+      setResolvingAgent(null);
     }
   }
 
@@ -333,6 +368,32 @@ function ReviewPage() {
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        )}
+
+                        {/* NEW: PROPOSE RESOLUTION UI */}
+                        {(agent.status === 'conflict' || agent.status === 'needs_info') && (
+                          <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-accent)' }}>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-accent)' }}>
+                              💬 Negotiate with Agent
+                            </h4>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
+                              Propose a fix or provide the missing information to clear this status.
+                            </p>
+                            <textarea
+                              value={resolutionText[agent.agent] || ''}
+                              onChange={(e) => setResolutionText({ ...resolutionText, [agent.agent]: e.target.value })}
+                              placeholder="e.g., I will use electric appliances instead of propane..."
+                              style={{ width: '100%', minHeight: '60px', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-bg-elevated)', color: 'var(--color-text-primary)', marginBottom: '0.75rem', fontSize: '0.9rem', outline: 'none', resize: 'vertical' }}
+                            />
+                            <button
+                              onClick={() => handleResolve(agent.agent)}
+                              disabled={resolvingAgent === agent.agent || !resolutionText[agent.agent]}
+                              className="btn-primary"
+                              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', opacity: (!resolutionText[agent.agent] || resolvingAgent === agent.agent) ? 0.5 : 1 }}
+                            >
+                              {resolvingAgent === agent.agent ? 'Agent evaluating...' : 'Submit to Agent'}
+                            </button>
                           </div>
                         )}
 
