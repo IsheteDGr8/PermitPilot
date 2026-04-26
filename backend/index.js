@@ -38,6 +38,50 @@ app.get('/api/health', (req, res) => {
 // =========================================
 // Main Evaluation Endpoint (FIXED ROUTE NAME)
 // =========================================
+// [NEW] The Magic Extractor Endpoint
+app.post('/api/parse-intake', async (req, res) => {
+  console.log(`\n[✨] Magic Extractor parsing user business description...`);
+  try {
+    const { description } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    // We force Gemini to return strict JSON matching your exact schema
+    const prompt = `You are a data extraction AI. Read the user's business description and extract the details into the following strict JSON schema. If the user does not specify a detail, infer a logical default based on context.
+    {
+      "business_name": "String (invent a fun one if not provided)",
+      "business_type": "food_truck | restaurant | bakery | salon | retail | other",
+      "city": "seattle | austin | other",
+      "employees": "solo | small | medium | large",
+      "zone": "downtown_c2 | commercial_c1 | industrial | residential_adj",
+      "fuel_type": "propane | electric | natural_gas | none"
+    }
+    User Description: "${description}"
+    Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+
+    const data = await response.json();
+    let rawText = data.candidates[0].content.parts[0].text;
+
+    // Clean up any accidental markdown formatting
+    rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(rawText);
+
+    console.log(`  [✅] Successfully extracted:`, parsed);
+    res.json(parsed);
+
+  } catch (err) {
+    console.error(`  [❌] Extraction failed:`, err.message);
+    res.status(500).json({ error: "Failed to extract business details." });
+  }
+});
+
 app.post('/api/evaluate-permit', async (req, res) => {
   const intakeData = req.body;
   const appId = intakeData.application_id || `app-${Date.now()}`;
