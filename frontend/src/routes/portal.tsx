@@ -11,10 +11,11 @@ import {
   Plane,
   Trash2,
   LogOut,
-  Plus
+  Plus,
+  DollarSign,
+  ListChecks,
 } from 'lucide-react'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
-import { StatusBadge } from '@/components/status-badge'
 import { supabase } from '@/lib/supabase'
 import type { IntakeData, AgentResult, CrossAgentConflict, ChecklistItem } from '@/lib/types'
 
@@ -32,6 +33,24 @@ interface DbApplication {
   total_estimated_cost?: number;
   overall_status: string;
   created_at: string;
+}
+
+/**
+ * Determine a user-friendly display status for an application.
+ * - "Approved" = all agents approved, no conflicts
+ * - "In Progress" = checklist exists but still has pending items or has conflicts
+ */
+function getDisplayStatus(app: DbApplication): { label: string; color: string; icon: typeof CheckCircle2 } {
+  const allClear = app.overall_status === 'all_clear'
+  const hasConflicts = app.overall_status === 'conflicts_detected'
+
+  if (allClear) {
+    return { label: 'Approved', color: 'var(--color-success)', icon: CheckCircle2 }
+  } else if (hasConflicts) {
+    return { label: 'Needs Attention', color: 'var(--color-danger)', icon: AlertTriangle }
+  } else {
+    return { label: 'In Progress', color: 'var(--color-warning)', icon: Clock }
+  }
 }
 
 function UserPortal() {
@@ -53,7 +72,6 @@ function UserPortal() {
       return;
     }
 
-    // Safely store the email for the UI so it doesn't crash on load
     setUserEmail(user.email || null);
 
     const { data, error } = await supabase
@@ -64,7 +82,7 @@ function UserPortal() {
 
     if (data) setApplications(data);
     if (error) setError(error.message);
-    setIsLoading(false); // Fixed typo from setLoading
+    setIsLoading(false);
   };
 
   const handleSignOut = async () => {
@@ -73,7 +91,7 @@ function UserPortal() {
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string | number) => {
-    e.stopPropagation(); // Prevents the card click event from firing when hitting delete
+    e.stopPropagation();
     setDeletingId(id.toString());
 
     const { error } = await supabase.from('applications').delete().eq('id', id);
@@ -86,6 +104,23 @@ function UserPortal() {
       setApplications(applications.filter(app => app.id !== id));
       setDeletingId(null);
     }
+  };
+
+  const handleViewApplication = (app: DbApplication) => {
+    // Store the full evaluation data so the review page can display it
+    localStorage.setItem('permitResult', JSON.stringify({
+      application_id: app.application_id,
+      overall_status: app.overall_status,
+      agents: app.agent_results,
+      cross_agent_conflicts: app.cross_agent_conflicts || [],
+      checklist: app.checklist || [],
+      total_estimated_cost: app.total_estimated_cost || 0,
+      evaluated_at: app.created_at,
+      evaluation_time_seconds: 0,
+    }));
+    localStorage.setItem('permitIntake', JSON.stringify(app.intake_data));
+    localStorage.setItem('permitFromPortal', 'true');
+    navigate({ to: '/review' });
   };
 
   return (
@@ -147,76 +182,116 @@ function UserPortal() {
 
         {!isLoading && !error && applications.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {applications.map((app, i) => (
-              <motion.div
-                key={app.id.toString()}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="glass-card glass-card-hover"
-                style={{
-                  display: 'flex', alignItems: 'center', padding: '1.25rem 1.5rem', gap: '1.5rem', cursor: 'pointer',
-                  opacity: deletingId === app.id.toString() ? 0.5 : 1
-                }}
-                onClick={() => {
-                  localStorage.setItem('permitResult', JSON.stringify({
-                    application_id: app.application_id,
-                    overall_status: app.overall_status,
-                    agents: app.agent_results,
-                    cross_agent_conflicts: app.cross_agent_conflicts || [],
-                    checklist: app.checklist || [],
-                    total_estimated_cost: app.total_estimated_cost || 0,
-                    evaluated_at: app.created_at
-                  }))
-                  localStorage.setItem('permitIntake', JSON.stringify(app.intake_data))
-                  localStorage.setItem('permitFromPortal', 'true')
-                  window.location.href = '/review'
-                }}
-              >
-                <div style={{
-                  width: '48px', height: '48px', borderRadius: 'var(--radius-sm)',
-                  background: app.overall_status === 'all_clear' ? 'var(--color-success-bg)' : app.overall_status === 'conflicts_detected' ? 'var(--color-danger-bg)' : 'var(--color-warning-bg)',
-                  display: 'grid', placeItems: 'center', flexShrink: 0,
-                }}>
-                  {app.overall_status === 'all_clear' ? (
-                    <CheckCircle2 size={24} style={{ color: 'var(--color-success)' }} />
-                  ) : app.overall_status === 'conflicts_detected' ? (
-                    <AlertTriangle size={24} style={{ color: 'var(--color-danger)' }} />
-                  ) : (
-                    <Clock size={24} style={{ color: 'var(--color-warning)' }} />
-                  )}
-                </div>
+            {applications.map((app, i) => {
+              const displayStatus = getDisplayStatus(app)
+              const StatusIcon = displayStatus.icon
+              const checklistCount = app.checklist?.length || 0
+              const estimatedCost = app.total_estimated_cost || 0
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {app.intake_data?.business_info?.business_name || 'Unnamed Business'}
-                    </h3>
+              return (
+                <motion.div
+                  key={app.id.toString()}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="glass-card glass-card-hover"
+                  style={{
+                    padding: '1.25rem 1.5rem',
+                    cursor: 'pointer',
+                    opacity: deletingId === app.id.toString() ? 0.5 : 1,
+                  }}
+                  onClick={() => handleViewApplication(app)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    {/* Status Icon */}
+                    <div style={{
+                      width: '48px', height: '48px', borderRadius: 'var(--radius-sm)',
+                      background: displayStatus.label === 'Approved'
+                        ? 'var(--color-success-bg)'
+                        : displayStatus.label === 'Needs Attention'
+                          ? 'var(--color-danger-bg)'
+                          : 'var(--color-warning-bg)',
+                      display: 'grid', placeItems: 'center', flexShrink: 0,
+                    }}>
+                      <StatusIcon size={24} style={{ color: displayStatus.color }} />
+                    </div>
+
+                    {/* Business Details */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {app.intake_data?.business_info?.business_name || 'Unnamed Business'}
+                        </h3>
+                        {/* Status Badge */}
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          background: displayStatus.label === 'Approved'
+                            ? 'var(--color-success-bg)'
+                            : displayStatus.label === 'Needs Attention'
+                              ? 'var(--color-danger-bg)'
+                              : 'var(--color-warning-bg)',
+                          color: displayStatus.color,
+                          border: `1px solid ${displayStatus.color}30`,
+                        }}>
+                          {displayStatus.label}
+                        </span>
+                      </div>
+
+                      {/* Info row */}
+                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span>{app.intake_data?.project_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Business'}</span>
+                        <span>•</span>
+                        <span>{app.intake_data?.location_details?.operating_zone || 'Unknown Zone'}</span>
+                        <span>•</span>
+                        <span>{new Date(app.created_at).toLocaleDateString()}</span>
+                      </div>
+
+                      {/* Cost & Checklist info */}
+                      <div style={{ display: 'flex', gap: '1.25rem', marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                        {estimatedCost > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <DollarSign size={13} style={{ color: 'var(--color-warning)' }} />
+                            Est. ${estimatedCost.toLocaleString()}
+                          </span>
+                        )}
+                        {checklistCount > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <ListChecks size={13} style={{ color: 'var(--color-info)' }} />
+                            {checklistCount} checklist items
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                      <button
+                        onClick={(e) => handleDelete(e, app.id)}
+                        disabled={deletingId === app.id.toString()}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          padding: '0.5rem', color: 'var(--color-text-muted)',
+                          transition: 'color 0.2s',
+                        }}
+                        title="Delete analysis"
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-danger)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+
+                      <ChevronRight size={20} style={{ color: 'var(--color-text-muted)' }} />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)', flexWrap: 'wrap' }}>
-                    <span>{app.intake_data?.project_type?.replace(/_/g, ' ')}</span>
-                    <span>•</span>
-                    <span>{app.intake_data?.location_details?.operating_zone || 'Unknown Zone'}</span>
-                    <span>•</span>
-                    <span>{new Date(app.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <StatusBadge status={app.overall_status === 'all_clear' ? 'approved' : app.overall_status === 'conflicts_detected' ? 'conflict' : 'error'} />
-
-                  <button
-                    onClick={(e) => handleDelete(e, app.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--color-text-muted)' }}
-                    title="Delete analysis"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-
-                  <ChevronRight size={20} style={{ color: 'var(--color-text-muted)' }} />
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </main>

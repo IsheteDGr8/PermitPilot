@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, ArrowLeft, Loader2, Sparkles, Plane } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Sparkles, Plane } from 'lucide-react'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
 import { agentIcons } from '@/components/agent-icons'
 import { supabase } from '@/lib/supabase'

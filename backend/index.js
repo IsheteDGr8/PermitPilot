@@ -1,7 +1,6 @@
 require('dotenv').config({ path: '../.env.local' });
 const express = require('express');
 const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
 
 // Import all domain agents
 const zoningAgent = require('./agents/zoning');
@@ -10,17 +9,11 @@ const fireAgent = require('./agents/fire');
 const buildingAgent = require('./agents/building');
 const licensingAgent = require('./agents/licensing');
 
-// Import utilities for Portal retrieval
-const { getApplications, deleteApplication } = require('./utils/supabase');
+// Import Supabase utilities (uses SERVICE ROLE KEY — bypasses RLS)
+const { saveApplication, getApplications, deleteApplication } = require('./utils/supabase');
 
-// Initialize Bulletproof Supabase Client for Saving
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-// Fail gracefully if keys are missing but don't crash
-const supabase = (supabaseUrl && supabaseKey)
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
+// NOTE: Supabase client is managed in utils/supabase.js with the SERVICE ROLE KEY
+// This bypasses Row Level Security so the backend can insert rows on behalf of any user.
 
 const app = express();
 app.use(cors());
@@ -129,33 +122,17 @@ app.post('/api/evaluate-permit', async (req, res) => {
     const overallStatus = hasConflict ? 'conflicts_detected' : hasError ? 'partial_evaluation' : 'all_clear';
 
     // =========================================
-    // Save to Database
+    // Save to Database (uses SERVICE ROLE KEY — bypasses RLS)
     // =========================================
-    if (supabase) {
-      console.log(`[💾] Saving application ${appId} to database...`);
-      const { error: dbError } = await supabase
-        .from('applications')
-        .insert([
-          {
-            application_id: appId,
-            user_id: userId,
-            project_type: intakeData.project_type,
-            intake_data: intakeData,
-            agent_results: agentResults,
-            cross_agent_conflicts: crossAgentConflicts,
-            checklist: checklist,
-            total_estimated_cost: totalCost,
-            overall_status: overallStatus
-          }
-        ]);
-
-      if (dbError) {
-        console.error(`  [❌] Database Save Failed:`, dbError.message);
-      } else {
-        console.log(`  [✅] Application securely saved to Supabase!`);
-      }
+    console.log(`[💾] Saving application ${appId} to database...`);
+    const saveResult = await saveApplication(
+      appId, userId, intakeData, agentResults,
+      crossAgentConflicts, checklist, totalCost, overallStatus
+    );
+    if (saveResult === null) {
+      console.error(`  [⚠️] Database save returned null (check Supabase config/keys)`);
     } else {
-      console.log(`  [⚠️] Supabase keys missing. Skipping database save.`);
+      console.log(`  [✅] Application securely saved to Supabase!`);
     }
 
     const response = {

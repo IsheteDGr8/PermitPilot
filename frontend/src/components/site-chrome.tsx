@@ -22,26 +22,114 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-6">
-        <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Compass className="h-4 w-4" />
+    <header
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        width: '100%',
+        borderBottom: '1px solid var(--color-border)',
+        background: 'rgba(10, 10, 15, 0.85)',
+        backdropFilter: 'blur(12px)',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          height: '56px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 1.5rem',
+        }}
+      >
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            textDecoration: 'none',
+            color: 'var(--color-text-primary)',
+            transition: 'opacity 0.2s',
+          }}
+        >
+          <span
+            style={{
+              display: 'grid',
+              width: '28px',
+              height: '28px',
+              placeItems: 'center',
+              borderRadius: '8px',
+              background: 'var(--color-accent)',
+              color: 'white',
+            }}
+          >
+            <Compass size={16} />
           </span>
-          <span className="font-medium tracking-wide">PermitPilot</span>
+          <span style={{ fontWeight: 600, letterSpacing: '0.02em' }}>PermitPilot</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.9rem', fontWeight: 500 }}>
           {user ? (
             <>
-              <Link to="/start" className="text-text-secondary transition-colors hover:text-foreground">Start New Permit</Link>
-              <Link to="/portal" className="text-text-secondary transition-colors hover:text-foreground">My Portal</Link>
-              <button onClick={handleLogout} className="flex items-center gap-1.5 text-text-secondary transition-colors hover:text-red-400">
-                <LogOut className="h-4 w-4" /> Logout
+              <Link
+                to="/start"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+              >
+                New Permit
+              </Link>
+              <Link
+                to="/portal"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+              >
+                My Portal
+              </Link>
+              <button
+                onClick={handleLogout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+              >
+                <LogOut size={15} /> Sign Out
               </button>
             </>
           ) : (
-            <Link to="/auth" className="rounded-full bg-primary px-4 py-1.5 text-primary-foreground transition-transform hover:scale-105">Login / Register</Link>
+            <Link
+              to="/auth"
+              className="btn-primary"
+              style={{
+                padding: '0.45rem 1.25rem',
+                fontSize: '0.85rem',
+                borderRadius: '9999px',
+              }}
+            >
+              Login / Register
+            </Link>
           )}
         </nav>
       </div>
@@ -51,15 +139,42 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/40 bg-surface/50 py-12">
-      <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-6 px-6 sm:flex-row">
-        <div className="flex items-center gap-2.5 opacity-80">
-          <span className="grid h-6 w-6 place-items-center rounded bg-foreground text-background">
-            <Compass className="h-3.5 w-3.5" />
+    <footer
+      style={{
+        borderTop: '1px solid var(--color-border)',
+        background: 'rgba(18, 18, 26, 0.5)',
+        padding: '3rem 0',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1.5rem',
+          padding: '0 1.5rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', opacity: 0.8 }}>
+          <span
+            style={{
+              display: 'grid',
+              width: '24px',
+              height: '24px',
+              placeItems: 'center',
+              borderRadius: '4px',
+              background: 'var(--color-text-primary)',
+              color: 'var(--color-bg)',
+            }}
+          >
+            <Compass size={14} />
           </span>
-          <span className="text-sm font-medium">PermitPilot</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>PermitPilot</span>
         </div>
-        <p className="text-xs text-text-secondary">
+        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
           A multi-agent demonstration. Not for actual municipal use.
         </p>
       </div>

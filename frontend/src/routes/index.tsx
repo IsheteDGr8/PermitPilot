@@ -1,6 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
   ArrowRight,
@@ -56,15 +54,6 @@ const steps = [
 ]
 
 function LandingPage() {
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate({ to: '/auth' })
-      }
-    })
-  }, [navigate])
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
