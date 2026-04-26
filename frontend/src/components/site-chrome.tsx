@@ -42,6 +42,20 @@ export function SiteHeader() {
 
         <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <Link
+            to="/admin"
+            style={{
+              color: 'var(--color-text-secondary)',
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+          >
+            Admin
+          </Link>
+          <Link
             to="/start"
             style={{
               color: 'var(--color-text-secondary)',

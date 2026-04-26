@@ -47,23 +47,40 @@ app.post('/api/evaluate', async (req, res) => {
     // =========================================
     // PHASE 1: Parallel Agent Dispatch
     // =========================================
-    console.log('\n[⚡] Dispatching to 5 domain agents in parallel...');
+    console.log('\n[⚡] Dispatching to 5 domain agents (staggered to avoid rate limits)...');
 
-    const agentPromises = [
-      { name: 'Zoning Authority', fn: zoningAgent.evaluate(intakeData) },
-      { name: 'Health Department', fn: healthAgent.evaluate(intakeData) },
-      { name: 'Fire Marshal', fn: fireAgent.evaluate(intakeData) },
-      { name: 'Building Dept', fn: buildingAgent.evaluate(intakeData) },
-      { name: 'Business Licensing', fn: licensingAgent.evaluate(intakeData) },
+    // Stagger calls with slight delays to avoid hitting per-minute rate limits
+    const agentDefs = [
+      { name: 'Zoning Authority', evaluator: zoningAgent },
+      { name: 'Health Department', evaluator: healthAgent },
+      { name: 'Fire Marshal', evaluator: fireAgent },
+      { name: 'Building Dept', evaluator: buildingAgent },
+      { name: 'Business Licensing', evaluator: licensingAgent },
     ];
 
     const startTime = Date.now();
-    const results = await Promise.allSettled(agentPromises.map(a => a.fn));
+    
+    // Launch agents with staggered delays (500ms apart) to spread rate limit load
+    const agentPromises = agentDefs.map((agent, index) => {
+      return new Promise(resolve => {
+        setTimeout(async () => {
+          try {
+            console.log(`  [🔄] Starting ${agent.name}...`);
+            const result = await agent.evaluator.evaluate(intakeData);
+            resolve({ status: 'fulfilled', value: result, name: agent.name });
+          } catch (error) {
+            resolve({ status: 'rejected', reason: error, name: agent.name });
+          }
+        }, index * 500); // 0ms, 500ms, 1000ms, 1500ms, 2000ms
+      });
+    });
+
+    const results = await Promise.all(agentPromises);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     // Process results
-    const agentResults = results.map((result, i) => {
-      const agentName = agentPromises[i].name;
+    const agentResults = results.map((result) => {
+      const agentName = result.name;
       if (result.status === 'fulfilled') {
         const status = (result.value.status || 'error').toLowerCase();
         console.log(`  [${status === 'approved' ? '✅' : status === 'conflict' ? '⚠️' : '❓'}] ${agentName}: ${status}`);
