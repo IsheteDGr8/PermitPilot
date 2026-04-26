@@ -248,7 +248,7 @@ function DualStartFlow() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                      <Lightbulb size={16} /> Try mentioning your city, fuel type, and location.
+                      <Lightbulb size={16} /> Try mentioning your business name, location type, city name, business type, etc.
                     </div>
                     <button onClick={handleMagicSubmit} disabled={!description.trim() || isProcessing} className="btn-primary" style={{ opacity: !description.trim() ? 0.5 : 1, padding: '0.85rem 2rem', fontSize: '1.05rem' }}>
                       Analyze Business <ArrowRight size={18} />

@@ -99,24 +99,16 @@ function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.4rem 1rem',
-                borderRadius: '9999px',
-                background: 'var(--color-accent-glow)',
-                border: '1px solid rgba(124,92,252,0.3)',
-                marginBottom: '1.5rem',
-                fontSize: '0.85rem',
-                color: 'var(--color-accent)',
-                fontWeight: 500,
-              }}
-            >
-              <Zap size={14} />
-              Powered by Google Gemini AI
-            </div>
+            <h2 style={{
+              fontSize: '4.5rem',
+              fontWeight: 800,
+              color: 'var(--color-accent)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              marginBottom: '1.5rem'
+            }}>
+              Permit Pilot
+            </h2>
 
             <h1
               style={{
@@ -258,13 +250,14 @@ function LandingPage() {
                 <div
                   style={{
                     position: 'absolute',
-                    top: '-20px',
-                    right: '-10px',
-                    fontSize: '6rem',
+                    top: '1.5rem',      /* Moved down */
+                    right: '2rem',      /* Moved left */
+                    fontSize: '5rem',
                     fontWeight: 900,
-                    color: 'rgba(255,255,255,0.03)',
-                    lineHeight: 1,
-                    pointerEvents: 'none',
+                    color: 'var(--color-text-primary)', /* Uses high-contrast text color */
+                    opacity: 0.08,      /* Very subtle so it doesn't block text, but visible in both modes */
+                    zIndex: 0,
+                    pointerEvents: 'none'
                   }}
                 >
                   {step.num}
@@ -301,7 +294,17 @@ function LandingPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <Plane size={40} style={{ color: 'var(--color-accent)', marginBottom: '1rem' }} />
+          <div style={{ width: '100%', overflow: 'hidden', position: 'relative', height: '80px', marginTop: '2rem' }}>
+            <motion.div
+              initial={{ x: '-10vw' }}
+              animate={{ x: '110vw' }}
+              transition={{ repeat: Infinity, duration: 15, ease: 'linear' }}
+              style={{ position: 'absolute', top: '10px' }}
+            >
+              <Plane size={48} style={{ color: 'var(--color-text-muted)', opacity: 0.4 }} />
+            </motion.div>
+          </div>
+
           <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
             Ready to fly through permits?
           </h2>

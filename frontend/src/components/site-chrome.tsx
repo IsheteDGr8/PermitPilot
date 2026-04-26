@@ -90,7 +90,9 @@ export function SiteFooter() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.7 }}>
           <Compass size={14} /> <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>PermitPilot</span>
         </div>
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>A multi-agent demonstration. Not for actual municipal use.</p>
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+          &copy; {new Date().getFullYear()} PermitPilot Inc. All rights reserved. Municipal licensing simplified.
+        </p>
       </div>
     </footer>
   );
