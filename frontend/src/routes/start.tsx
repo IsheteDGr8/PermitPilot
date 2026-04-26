@@ -5,6 +5,7 @@ import { ArrowRight, ArrowLeft, Loader2, Sparkles, Plane } from 'lucide-react'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
 import { getAgentIcon, getAgentColor } from '@/components/agent-icons'
 import { evaluatePermit } from '@/lib/api'
+import { supabase } from '@/lib/supabase'
 import type { IntakeData } from '@/lib/types'
 import { DEMO_INTAKE } from '@/lib/types'
 
@@ -179,6 +180,12 @@ function IntakePage() {
     }
 
     try {
+      // Get current user if logged in
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        intakeData.user_id = session.user.id
+      }
+
       const data = await evaluatePermit(intakeData)
       localStorage.setItem('permitResult', JSON.stringify(data))
       localStorage.setItem('permitIntake', JSON.stringify(intakeData))
@@ -201,10 +208,15 @@ function IntakePage() {
     }
   }
 
-  const handleDemo = () => {
+  const handleDemo = async () => {
     localStorage.setItem('permitIntake', JSON.stringify(DEMO_INTAKE))
     setIsEvaluating(true)
-    evaluatePermit(DEMO_INTAKE)
+    
+    // Check user session
+    const { data: { session } } = await supabase.auth.getSession()
+    const intakeData = { ...DEMO_INTAKE, user_id: session?.user?.id || undefined }
+
+    evaluatePermit(intakeData)
       .then((data) => {
         localStorage.setItem('permitResult', JSON.stringify(data))
         navigate({ to: '/review' })

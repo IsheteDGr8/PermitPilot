@@ -28,9 +28,22 @@ export async function checkHealth() {
 }
 
 /**
- * Fetch past applications (admin).
+ * Fetch past applications.
  */
-export async function getApplications() {
-  const res = await fetch(`${API_BASE}/applications`);
+export async function getApplications(userId?: string) {
+  const url = userId ? `${API_BASE}/applications?user_id=${userId}` : `${API_BASE}/applications`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch applications');
+  return res.json();
+}
+
+/**
+ * Delete a past application.
+ */
+export async function deleteApplication(appId: string, userId: string) {
+  const res = await fetch(`${API_BASE}/applications/${appId}?user_id=${userId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete application');
   return res.json();
 }

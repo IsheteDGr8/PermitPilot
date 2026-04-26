@@ -10,7 +10,7 @@ const buildingAgent = require('./agents/building');
 const licensingAgent = require('./agents/licensing');
 
 // Import utilities
-const { saveApplication, getApplications } = require('./utils/supabase');
+const { saveApplication, getApplications, deleteApplication } = require('./utils/supabase');
 
 const app = express();
 app.use(cors());
@@ -36,6 +36,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/evaluate', async (req, res) => {
   const intakeData = req.body;
   const appId = intakeData.application_id || `app-${Date.now()}`;
+  const userId = intakeData.user_id || null;
 
   console.log(`\n${'='.repeat(60)}`);
   console.log(`[🚀] New Evaluation Request: ${appId}`);
@@ -142,7 +143,7 @@ app.post('/api/evaluate', async (req, res) => {
     // PHASE 5: Save to Database
     // =========================================
     console.log('\n[💾] Saving to database...');
-    await saveApplication(appId, intakeData, agentResults, overallStatus);
+    await saveApplication(appId, userId, intakeData, agentResults, crossAgentConflicts, checklist, totalCost, overallStatus);
     console.log('  [✅] Saved successfully');
 
     // =========================================
@@ -178,12 +179,31 @@ app.post('/api/evaluate', async (req, res) => {
 });
 
 // =========================================
-// Admin: Get past applications
+// Admin/User: Get past applications
 // =========================================
 app.get('/api/applications', async (req, res) => {
   try {
-    const apps = await getApplications();
+    const userId = req.query.user_id;
+    const apps = await getApplications(userId);
     res.json({ applications: apps });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =========================================
+// User: Delete past application
+// =========================================
+app.delete('/api/applications/:id', async (req, res) => {
+  try {
+    const appId = req.params.id;
+    const userId = req.query.user_id;
+    const success = await deleteApplication(appId, userId);
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ success: false, error: 'Failed to delete application' });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

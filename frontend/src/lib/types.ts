@@ -70,6 +70,7 @@ export interface EvaluationResponse {
 
 export interface IntakeData {
   application_id: string;
+  user_id?: string;
   project_type: string;
   business_info: {
     business_name: string;

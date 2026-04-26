@@ -35,6 +35,10 @@ function ReviewPage() {
     if (savedIntake) setIntake(JSON.parse(savedIntake))
   }, [])
 
+  const isFromPortal = typeof window !== 'undefined' && localStorage.getItem('permitFromPortal') === 'true';
+  const backLink = isFromPortal ? '/portal' : '/start';
+  const backText = isFromPortal ? 'Back to Portal' : 'New Application';
+
   const toggleAgent = (index: number) => {
     setExpandedAgents((prev) => {
       const next = new Set(prev)
@@ -72,8 +76,8 @@ function ReviewPage() {
       <main style={{ flex: 1, maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '2rem var(--spacing-page)' }}>
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Link to="/start" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            <ArrowLeft size={14} /> New Application
+          <Link to={backLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+            <ArrowLeft size={14} /> {backText}
           </Link>
 
           <div className="glass-card" style={{ padding: '1.5rem 2rem', marginBottom: '2rem' }}>
@@ -431,8 +435,8 @@ function ReviewPage() {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/start" className="btn-secondary">
-            <ArrowLeft size={16} /> New Application
+          <Link to={backLink} className="btn-secondary">
+            <ArrowLeft size={16} /> {backText}
           </Link>
         </div>
       </main>

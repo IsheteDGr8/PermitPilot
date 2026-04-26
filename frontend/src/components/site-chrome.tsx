@@ -1,7 +1,29 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Plane } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 
 export function SiteHeader() {
+  const navigate = useNavigate()
+  const [session, setSession] = useState<any>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    navigate({ to: '/auth' })
+  }
+
   return (
     <header
       style={{
@@ -69,6 +91,51 @@ export function SiteHeader() {
           >
             Start Permit
           </Link>
+          {session ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+              <Link
+                to="/portal"
+                style={{
+                  color: 'var(--color-accent)',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  transition: 'color 0.2s',
+                }}
+              >
+                My Portal
+              </Link>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-danger)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/auth"
+              style={{
+                color: 'var(--color-accent)',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                transition: 'color 0.2s',
+              }}
+            >
+              Sign In
+            </Link>
+          )}
         </nav>
       </div>
     </header>
