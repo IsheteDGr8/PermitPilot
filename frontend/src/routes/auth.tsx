@@ -18,53 +18,46 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    setMessage(null)
+  // --- Email / Password Auth ---
+  const handleEmailAuth = async (e: React.FormEvent, isLogin: boolean) => {
+    e.preventDefault();
+    setError(null);
 
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        navigate({ to: '/' })
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        setMessage('Check your email for the confirmation link.')
-      }
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+    const { data, error: authError } = isLogin
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
+
+    if (authError) {
+      setError(authError.message);
+      return;
     }
-  }
 
+    // Success! Route the user to their dashboard.
+    navigate({ to: '/portal' });
+  };
+
+  // --- Google OAuth ---
   const handleGoogleAuth = async () => {
-    setError(null)
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      })
-      if (error) throw error
-    } catch (err: any) {
-      setError(err.message)
-    }
-  }
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/portal`, // Auto-redirect after Google approves
+      }
+    });
+
+    if (oauthError) setError(oauthError.message);
+  };
+
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SiteHeader />
-      
+
       <main style={{ flex: 1, display: 'grid', placeItems: 'center', padding: '2rem' }}>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card" 
+          className="glass-card"
           style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}
         >
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -99,8 +92,8 @@ function AuthPage() {
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>Email Address</label>
               <div style={{ position: 'relative' }}>
                 <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -114,8 +107,8 @@ function AuthPage() {
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>Password</label>
               <div style={{ position: 'relative' }}>
                 <KeyRound size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
