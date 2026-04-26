@@ -61,6 +61,9 @@ export function SiteHeader() {
             <>
               <Link to="/start" style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}>New Permit</Link>
               <Link to="/portal" style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}>My Portal</Link>
+              <Link to="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-text-secondary)', textDecoration: 'none' }}>
+                <User size={15} /> Profile
+              </Link>
               <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
                 <LogOut size={15} /> Sign Out
               </button>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,11 @@ const StartRoute = StartRouteImport.update({
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/portal': typeof PortalRoute
+  '/profile': typeof ProfileRoute
   '/review': typeof ReviewRoute
   '/start': typeof StartRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/portal': typeof PortalRoute
+  '/profile': typeof ProfileRoute
   '/review': typeof ReviewRoute
   '/start': typeof StartRoute
 }
@@ -60,21 +68,23 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/portal': typeof PortalRoute
+  '/profile': typeof ProfileRoute
   '/review': typeof ReviewRoute
   '/start': typeof StartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/portal' | '/review' | '/start'
+  fullPaths: '/' | '/auth' | '/portal' | '/profile' | '/review' | '/start'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/portal' | '/review' | '/start'
-  id: '__root__' | '/' | '/auth' | '/portal' | '/review' | '/start'
+  to: '/' | '/auth' | '/portal' | '/profile' | '/review' | '/start'
+  id: '__root__' | '/' | '/auth' | '/portal' | '/profile' | '/review' | '/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   PortalRoute: typeof PortalRoute
+  ProfileRoute: typeof ProfileRoute
   ReviewRoute: typeof ReviewRoute
   StartRoute: typeof StartRoute
 }
@@ -93,6 +103,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -123,6 +140,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   PortalRoute: PortalRoute,
+  ProfileRoute: ProfileRoute,
   ReviewRoute: ReviewRoute,
   StartRoute: StartRoute,
 }

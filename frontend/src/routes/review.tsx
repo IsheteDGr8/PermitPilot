@@ -14,7 +14,14 @@ import {
   Plane,
   ArrowLeft,
   Check, // Added Check icon
+  Sparkles,
+  Download,
+  X,
+  User,
+  Building,
+  Wand2
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
 import { StatusBadge } from '@/components/status-badge'
 import { getAgentIcon, getAgentColor } from '@/components/agent-icons'
@@ -32,6 +39,11 @@ function ReviewPage() {
   // NEW STATES:
   const [resolvingAgent, setResolvingAgent] = useState<string | null>(null)
   const [resolutionText, setResolutionText] = useState<Record<string, string>>({})
+  // NEW: Document Modal States
+  const [docModalOpen, setDocModalOpen] = useState(false)
+  const [activeDoc, setActiveDoc] = useState<any>(null)
+  const [docProgress, setDocProgress] = useState(0)
+  const [ownerName, setOwnerName] = useState('Business Owner')
 
   useEffect(() => {
     const savedResult = localStorage.getItem('permitResult')
@@ -104,6 +116,55 @@ function ReviewPage() {
     } finally {
       setResolvingAgent(null);
     }
+  }
+
+  // --- DOCUMENT AUTO-FILL LOGIC ---
+  const openDocModal = async (item: any) => {
+    setActiveDoc(item)
+    setDocModalOpen(true)
+    setDocProgress(0)
+
+    // Fetch the user's profile name we just created
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.user_metadata?.full_name) {
+      setOwnerName(user.user_metadata.full_name)
+    }
+
+    // Fake the AI processing animation
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 15;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+      }
+      setDocProgress(progress);
+    }, 300);
+  }
+
+  const handleDownloadForm = () => {
+    // Generate a beautiful text document containing the extracted fields
+    const content = `MUNICIPAL PERMIT DRAFT\nForm: ${activeDoc?.action}\n\n` +
+      `-- APPLICANT INFO (From Profile) --\n` +
+      `Owner Name: ${ownerName}\n\n` +
+      `-- BUSINESS INFO (From Intake) --\n` +
+      `Business Name: ${intake?.business_info?.business_name || 'Demo Business'}\n` +
+      `Operating Zone: ${intake?.location_details?.operating_zone || 'N/A'}\n\n` +
+      `-- AI ESTIMATED FIELDS --\n` +
+      `Tax Classification: LLC / Sole Proprietorship\n` +
+      `Estimated Start Date: TBD\n\n` +
+      `* Please review and sign before submitting to the municipality. *`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Draft_${activeDoc?.action?.replace(/\s+/g, '_') || 'Form'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setDocModalOpen(false);
   }
 
   if (!result) {
@@ -505,10 +566,20 @@ function ReviewPage() {
                       }}>
                         {item.action}
                       </p>
-                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap', alignItems: 'center' }}>
                         <span>{item.source_agent}</span>
                         {item.estimated_cost != null && <span>💰 ${item.estimated_cost.toLocaleString()}</span>}
                         {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
+
+                        {/* THE AUTO-FILL BUTTON */}
+                        {!isDone && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openDocModal(item); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'var(--color-accent-glow)', color: 'var(--color-accent)', border: '1px solid rgba(124,92,252,0.2)', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto' }}
+                          >
+                            <Sparkles size={12} /> Auto-Fill Form
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -539,6 +610,81 @@ function ReviewPage() {
             <ArrowLeft size={16} /> {backText}
           </Link>
         </div>
+
+        {/* DOCUMENT AUTO-FILL MODAL */}
+        <AnimatePresence>
+          {docModalOpen && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '1rem' }}
+              onClick={() => setDocModalOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                onClick={e => e.stopPropagation()}
+                className="glass-card"
+                style={{ width: '100%', maxWidth: '500px', background: 'var(--color-bg-card)', overflow: 'hidden' }}
+              >
+                {/* Header */}
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Sparkles size={18} style={{ color: 'var(--color-accent)' }} /> Permit Auto-Fill
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: '0.2rem' }}>{activeDoc?.action}</p>
+                  </div>
+                  <button onClick={() => setDocModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}><X size={20} /></button>
+                </div>
+
+                {/* Body */}
+                <div style={{ padding: '1.5rem', background: 'var(--color-bg)' }}>
+
+                  {/* Fake Progress Bar */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: docProgress === 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>
+                      <span>{docProgress === 100 ? 'Document Generated' : 'AI analyzing context and mapping fields...'}</span>
+                      <span>{docProgress}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--color-border)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${docProgress}%`, height: '100%', background: docProgress === 100 ? 'var(--color-success)' : 'var(--color-accent)', transition: 'width 0.3s ease' }} />
+                    </div>
+                  </div>
+
+                  {/* Extracted Fields */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', opacity: docProgress > 30 ? 1 : 0, transition: 'opacity 0.5s' }}>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500 }}><User size={14} style={{ color: 'var(--color-success)' }} /> Owner Name</div>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{ownerName}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500 }}><Building size={14} style={{ color: 'var(--color-success)' }} /> Business Name</div>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{intake?.business_info?.business_name || 'Demo Business'}</span>
+                    </div>
+
+                    {/* AI Estimated Field */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-accent-glow)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(124,92,252,0.3)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-accent)' }}>
+                        <Wand2 size={14} /> Tax Classification (Estimated)
+                      </div>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--color-accent)' }}>LLC / Sole Prop</span>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '1rem' }}>
+                  <button onClick={() => setDocModalOpen(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                  <button onClick={handleDownloadForm} disabled={docProgress < 100} className="btn-primary" style={{ flex: 2, justifyContent: 'center', opacity: docProgress < 100 ? 0.5 : 1 }}>
+                    <Download size={16} /> Review & Sign (Download Draft)
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <SiteFooter />
