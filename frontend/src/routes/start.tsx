@@ -1,154 +1,157 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, Loader2 } from "lucide-react";
-import { SiteHeader, SiteFooter } from "@/components/site-chrome";
-import { agentIcons } from "@/components/agent-icons";
-import { supabase } from "@/lib/supabase"; // Import supabase client
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useState, useMemo, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowRight, ArrowLeft, Loader2, Sparkles, Plane } from 'lucide-react'
+import { SiteHeader, SiteFooter } from '@/components/site-chrome'
+import { agentIcons } from '@/components/agent-icons'
+import { supabase } from '@/lib/supabase'
 
-export const Route = createFileRoute("/start")({
+export const Route = createFileRoute('/start')({
   component: StartFlow,
-});
+})
 
-type Question = {
-  id: string;
-  prompt: string;
-  hint?: string;
-  field: "text" | "choice";
-  options?: string[];
-  triggers: string[];
-  fillKey: keyof typeof initialKnown;
-};
+interface Question {
+  key: string
+  label: string
+  placeholder: string
+  type: 'text' | 'select'
+  options?: { value: string; label: string }[]
+  wakesAgent?: string
+}
 
-// 1. Updated State to reflect universal businesses
-const initialKnown = {
-  business: "",
-  businessType: "",
-  address: "",
-  hours: "",
-  power: "",
-  employees: "",
-};
-
-// 2. The Universal Questionnaire 
 const questions: Question[] = [
   {
-    id: "q1",
-    prompt: "What's the legal name of the business?",
-    hint: "If you haven't formed an LLC yet, that's okay — use your DBA.",
-    field: "text",
-    triggers: ["licensing"],
-    fillKey: "business",
+    key: 'business_name',
+    label: "What's the name of your business?",
+    placeholder: "e.g., Maria's Tacos, Urban Cuts Salon...",
+    type: 'text',
   },
   {
-    id: "q2",
-    prompt: "What type of business are you opening?",
-    field: "choice",
-    options: ["Food Truck / Mobile Vendor", "Brick & Mortar Restaurant", "Retail / Boutique Store", "Service / Salon"],
-    triggers: ["zoning", "health"],
-    fillKey: "businessType",
+    key: 'business_type',
+    label: 'What type of business are you opening?',
+    placeholder: 'Select your business type',
+    type: 'select',
+    options: [
+      { value: 'food_truck', label: '🚚 Food Truck' },
+      { value: 'restaurant', label: '🍽️ Restaurant' },
+      { value: 'bakery', label: '🧁 Bakery / Café' },
+      { value: 'salon', label: '💇 Hair / Beauty Salon' },
+      { value: 'retail', label: '🛍️ Retail Store' },
+    ],
+    wakesAgent: 'Zoning Authority',
   },
   {
-    id: "q3",
-    prompt: "What is the exact street address or target location?",
-    hint: "E.g., '123 Pike St, Seattle' or 'Capitol Hill public street parking'",
-    field: "text",
-    triggers: ["zoning", "fire"],
-    fillKey: "address",
+    key: 'zone',
+    label: 'Where will you operate?',
+    placeholder: 'Select your operating zone',
+    type: 'select',
+    options: [
+      { value: 'downtown_c2', label: '🏙️ Downtown (C-2, near park)' },
+      { value: 'commercial_c1', label: '🏪 Neighborhood Commercial (C-1)' },
+      { value: 'industrial', label: '🏭 Industrial / Mixed-Use' },
+      { value: 'residential_adj', label: '🏡 Near Residential Area' },
+    ],
+    wakesAgent: 'Fire Marshal',
   },
   {
-    id: "q4",
-    prompt: "What are your planned hours of operation?",
-    hint: "E.g., Mon-Sat 9:00 AM to 6:00 PM",
-    field: "text",
-    triggers: ["zoning", "building"],
-    fillKey: "hours",
+    key: 'employees',
+    label: 'How many employees will you have?',
+    placeholder: 'Select team size',
+    type: 'select',
+    options: [
+      { value: 'solo', label: '👤 Just me (solo operator)' },
+      { value: 'small', label: '👥 2-5 employees' },
+      { value: 'medium', label: '👥 6-15 employees' },
+      { value: 'large', label: '🏢 16+ employees' },
+    ],
+    wakesAgent: 'Business Licensing',
   },
   {
-    id: "q5",
-    prompt: "How will the business access power and utilities?",
-    field: "choice",
-    options: ["Existing commercial building hookups", "Mobile generator (< 5kW)", "Shoreline / external hookup"],
-    triggers: ["building"],
-    fillKey: "power",
+    key: 'fuel_type',
+    label: 'What fuel/cooking method will you use?',
+    placeholder: 'Select your primary fuel source',
+    type: 'select',
+    options: [
+      { value: 'propane', label: '🔥 Propane / LPG' },
+      { value: 'electric', label: '⚡ Electric' },
+      { value: 'natural_gas', label: '🔵 Natural Gas (piped)' },
+      { value: 'none', label: '🚫 No cooking (retail/salon)' },
+    ],
+    wakesAgent: 'Health Department',
   },
-  {
-    id: "q6",
-    prompt: "How many employees, including yourself?",
-    field: "choice",
-    options: ["Just me", "2 (me + 1 part-time)", "3–5", "6 or more"],
-    triggers: ["licensing", "health"],
-    fillKey: "employees",
-  },
-];
+]
 
-// Define the agents locally so we don't need the external mock file
-const agents = [
-  { id: "zoning", name: "Zoning Authority", iconKey: "map" },
-  { id: "building", name: "Building Dept", iconKey: "hammer" },
-  { id: "health", name: "Health Dept", iconKey: "heart" },
-  { id: "fire", name: "Fire Marshal", iconKey: "flame" },
-  { id: "licensing", name: "Business Licensing", iconKey: "badge" },
-  { id: "orchestrator", name: "Orchestrator", iconKey: "network" },
-];
-
-const seedAnswers: typeof initialKnown = {
-  business: "Springy Sodas",
-  businessType: "Food Truck / Mobile Vendor",
-  address: "Capitol Hill parking",
-  hours: "Weekends 11am - 8pm",
-  power: "Existing commercial building hookups",
-  employees: "2 (me + 1 part-time)",
-};
+const sidebarAgents = [
+  { name: 'Zoning Authority', id: 'zoning', iconKey: 'zoning' },
+  { name: 'Health Department', id: 'health', iconKey: 'health' },
+  { name: 'Fire Marshal', id: 'fire', iconKey: 'fire' },
+  { name: 'Building Dept', id: 'building', iconKey: 'building' },
+  { name: 'Business Licensing', id: 'licensing', iconKey: 'licensing' },
+]
 
 function StartFlow() {
-  const [step, setStep] = useState(0);
-  const [known, setKnown] = useState(initialKnown);
-  const [draft, setDraft] = useState("");
-  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [step, setStep] = useState(0)
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate({ from: '/start' })
 
-  const total = questions.length;
-  const done = step >= total;
-  const current = !done ? questions[step] : null;
-
-  const navigate = useNavigate({ from: '/start' });
+  const total = questions.length
+  const done = step >= total
+  const current = !done ? questions[step] : null
 
   // Route Protection: Kick out unauthenticated users immediately
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) navigate({ to: "/auth" });
-    });
-  }, [navigate]);
+      if (!data.user) navigate({ to: "/auth" })
+    })
+  }, [navigate])
 
-  const submitToAgents = async (finalData: typeof initialKnown) => {
-    setIsEvaluating(true);
-    setStep(total);
+  const wokeAgents = useMemo(() => {
+    const woke = new Set<string>()
+    for (let i = 0; i <= step && i < total; i++) {
+      const q = questions[i]
+      if (q.wakesAgent && answers[q.key]) {
+        woke.add(q.wakesAgent)
+      }
+    }
+    return woke
+  }, [step, answers])
+
+  const submitToAgents = async (finalAnswers: Record<string, string>) => {
+    setIsEvaluating(true)
+    setError(null)
 
     // Get the logged in user
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser()
 
-    // Dynamic Payload Mapping based on Business Type
-    const isFoodTruck = finalData.businessType.includes("Food Truck");
+    const zoneMap: Record<string, { zone: string; parkDist: number }> = {
+      downtown_c2: { zone: 'Downtown (C-2)', parkDist: 45 }, // Trigger the 50ft park violation!
+      commercial_c1: { zone: 'Neighborhood Commercial (C-1)', parkDist: 200 },
+      industrial: { zone: 'Industrial / Mixed-Use', parkDist: 500 },
+      residential_adj: { zone: 'Near Residential Area', parkDist: 150 },
+    }
+
+    const loc = zoneMap[finalAnswers.zone] || zoneMap.downtown_c2
+    const isFoodBiz = ['food_truck', 'restaurant', 'bakery'].includes(finalAnswers.business_type)
 
     const payload = {
       application_id: `app-${Math.floor(Math.random() * 10000)}`,
-      user_id: user?.id, // Send the user ID to the backend
-      project_type: isFoodTruck ? "food_truck" : "commercial_retail",
+      user_id: user?.id,
+      project_type: finalAnswers.business_type || "retail",
       business_info: {
-        business_name: finalData.business || "Demo Business",
-        employees: finalData.employees.includes("me") ? 1 : 4
+        business_name: finalAnswers.business_name || "Demo Business",
+        employees: finalAnswers.employees === 'solo' ? 1 : 5
       },
       location_details: {
-        operating_zone: finalData.address || "Downtown",
-        // 🚨 THE TRAP: If it's a food truck, put it 45 feet from a park so the AI catches the rule violation for the demo!
-        proximity_to_park_feet: isFoodTruck ? 45 : 100
+        operating_zone: loc.zone,
+        proximity_to_park_feet: isFoodBiz ? loc.parkDist : 100
       },
       health_and_safety: {
-        // Only require heavy food prep rules if they are a food business
-        food_handling_tier: finalData.businessType.includes("Food") || finalData.businessType.includes("Restaurant") ? "open_preparation" : "none",
+        food_handling_tier: isFoodBiz ? "open_preparation" : "none",
         commissary_kitchen_access: true
       }
-    };
+    }
 
     try {
       const res = await fetch("http://localhost:8080/api/evaluate-permit", {
@@ -160,223 +163,125 @@ function StartFlow() {
       const data = await res.json();
 
       localStorage.setItem("permitResult", JSON.stringify(data));
-      localStorage.setItem("permitIntake", JSON.stringify(finalData));
+      localStorage.setItem("permitIntake", JSON.stringify(payload));
 
       navigate({ to: "/review" });
-    } catch (error) {
-      console.error("Agent evaluation failed:", error);
+    } catch (err: unknown) {
+      console.error('Agent evaluation failed:', err);
+      setError("Failed to connect to the Orchestrator API. Is your backend running on port 8080?");
       setIsEvaluating(false);
     }
-  };
+  }
 
-  const wokenAgents = useMemo(() => {
-    const set = new Set<string>();
-    for (let i = 0; i < step; i++) {
-      questions[i].triggers.forEach((t) => set.add(t));
-    }
-    if (step >= 3) set.add("orchestrator");
-    return set;
-  }, [step]);
-
-  const advance = (value: string) => {
-    if (!current) return;
-    const nextKnown = { ...known, [current.fillKey]: value };
-    setKnown(nextKnown);
-    setDraft("");
+  const handleAnswer = (value: string) => {
+    const newAnswers = { ...answers, [current!.key]: value }
+    setAnswers(newAnswers)
 
     if (step + 1 >= total) {
-      submitToAgents(nextKnown);
+      submitToAgents(newAnswers)
     } else {
-      setStep((s) => s + 1);
+      setStep(step + 1)
     }
-  };
-
-  const back = () => {
-    if (step === 0) return;
-    setStep((s) => s - 1);
-    setDraft("");
-  };
-
-  const useDemo = () => {
-    setKnown(seedAnswers);
-    submitToAgents(seedAnswers);
-  };
+  }
 
   return (
-    <div className="min-h-screen">
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SiteHeader />
 
-      <div className="mx-auto grid max-w-[1200px] gap-8 px-6 py-12 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
-        {/* Left rail — agent council */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="text-xs uppercase tracking-[0.14em] text-text-secondary">
+      <main style={{ flex: 1, display: 'flex', maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '2rem', gap: '2rem' }}>
+        {/* Sidebar — Agent Status */}
+        <aside style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '1rem' }} className="hidden-mobile">
+          <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
             Agent Council
-          </div>
-          <ul className="mt-4 space-y-1">
-            {agents.map((a) => {
-              const Icon = agentIcons[a.iconKey];
-              const woke = isEvaluating || wokenAgents.has(a.id);
-              return (
-                <li
-                  key={a.id}
-                  className={`flex items-center gap-2.5 rounded-md px-2 py-2 text-sm transition-colors ${woke ? "text-foreground" : "text-text-secondary/70"
-                    }`}
-                >
-                  <span
-                    className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${woke
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-text-secondary/60"
-                      }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="flex-1">{a.name}</span>
-                  {woke ? (
-                    <span className="pulse-dot relative inline-block h-1.5 w-1.5 rounded-full text-primary">
-                      <span className="relative block h-1.5 w-1.5 rounded-full bg-primary" />
-                    </span>
-                  ) : (
-                    <span className="h-1.5 w-1.5 rounded-full bg-border" />
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          </h3>
+          {sidebarAgents.map((a) => {
+            // BULLETPROOF FALLBACK: If the icon doesn't exist, use Sparkles
+            const Icon = (agentIcons && agentIcons[a.iconKey as keyof typeof agentIcons]) || Sparkles;
+            const woke = isEvaluating || wokeAgents.has(a.name);
+
+            return (
+              <div
+                key={a.name}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)', transition: 'all 0.3s ease',
+                  opacity: woke ? 1 : 0.4,
+                  background: woke ? 'rgba(124, 92, 252, 0.1)' : 'transparent',
+                }}
+              >
+                <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', display: 'grid', placeItems: 'center', background: woke ? 'rgba(124, 92, 252, 0.2)' : 'var(--color-bg-elevated)' }}>
+                  <Icon size={16} style={{ color: woke ? 'var(--color-accent)' : 'var(--color-text-muted)' }} />
+                </div>
+                <span style={{ fontSize: '0.85rem', fontWeight: woke ? 600 : 400, color: woke ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>
+                  {a.name}
+                </span>
+              </div>
+            )
+          })}
         </aside>
 
-        {/* Center — questions */}
-        <main className="min-h-[420px]">
-          {!isEvaluating && (
-            <div className="mb-6 flex items-center justify-between">
-              <span className="font-mono text-xs text-text-secondary">
-                {Math.min(step + 1, total)} / {total}
-              </span>
-              <button
-                onClick={useDemo}
-                className="text-xs text-primary underline-offset-4 hover:underline"
-              >
-                Skip — use Springy Sodas demo
-              </button>
-            </div>
+        {/* Main Form Area */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '500px' }}>
+          {isEvaluating && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '3rem' }}>
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }} style={{ display: 'inline-block', marginBottom: '1.5rem' }}>
+                <Plane size={48} style={{ color: 'var(--color-accent)' }} />
+              </motion.div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Agents are evaluating...</h2>
+              <p style={{ color: 'var(--color-text-secondary)' }}>Five AI agents are analyzing your application in parallel.</p>
+            </motion.div>
           )}
 
-          <AnimatePresence mode="wait">
-            {current && !isEvaluating ? (
-              <motion.div
-                key={current.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="rounded-xl border border-border bg-surface p-8"
-              >
-                <h1 className="text-3xl">{current.prompt}</h1>
-                {current.hint && (
-                  <p className="mt-2 text-sm text-text-secondary">{current.hint}</p>
-                )}
+          {error && !isEvaluating && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '1rem 1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--color-danger-bg)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--color-danger)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+              {error}
+            </motion.div>
+          )}
 
-                {current.field === "text" && (
-                  <div className="mt-8">
+          {!isEvaluating && !done && current && (
+            <AnimatePresence mode="wait">
+              <motion.div key={step} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Question {step + 1} of {total}</span>
+                  </div>
+                </div>
+
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>{current.label}</h2>
+
+                {current.type === 'text' && (
+                  <div>
                     <input
+                      type="text"
+                      placeholder={current.placeholder}
+                      defaultValue={answers[current.key] || ''}
                       autoFocus
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && draft.trim()) advance(draft.trim());
-                      }}
-                      placeholder="Type your answer…"
-                      className="w-full rounded-md border border-border bg-background px-4 py-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      onKeyDown={(e) => { if (e.key === 'Enter' && e.currentTarget.value.trim()) handleAnswer(e.currentTarget.value.trim()) }}
+                      style={{ width: '100%', padding: '1rem 1.25rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text-primary)', fontSize: '1.1rem', outline: 'none' }}
                     />
                   </div>
                 )}
 
-                {current.field === "choice" && (
-                  <div className="mt-8 grid gap-2">
-                    {current.options!.map((opt) => (
+                {current.type === 'select' && current.options && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {current.options.map((opt) => (
                       <button
-                        key={opt}
-                        onClick={() => advance(opt)}
-                        className="group flex items-center justify-between rounded-md border border-border bg-background px-4 py-3 text-left text-sm transition-colors hover:border-primary/50 hover:bg-accent"
+                        key={opt.value}
+                        onClick={() => handleAnswer(opt.value)}
+                        className="glass-card glass-card-hover"
+                        style={{ padding: '1rem 1.25rem', textAlign: 'left', cursor: 'pointer', fontSize: '1.05rem', color: 'var(--color-text-primary)' }}
                       >
-                        <span>{opt}</span>
-                        <ArrowRight className="h-4 w-4 -translate-x-1 text-text-secondary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                        {opt.label}
                       </button>
                     ))}
                   </div>
                 )}
-
-                <div className="mt-8 flex items-center justify-between">
-                  <button
-                    onClick={back}
-                    disabled={step === 0}
-                    className="inline-flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-foreground disabled:opacity-30"
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Back
-                  </button>
-                  {current.field === "text" && (
-                    <button
-                      onClick={() => draft.trim() && advance(draft.trim())}
-                      disabled={!draft.trim()}
-                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-                    >
-                      Continue <ArrowRight className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
               </motion.div>
-            ) : isEvaluating ? (
-              <motion.div
-                key="evaluating"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center rounded-xl border border-border bg-surface p-12 text-center"
-              >
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <h1 className="mt-6 text-2xl font-medium">Agents are evaluating...</h1>
-                <p className="mt-2 max-w-md text-text-secondary">
-                  Reading the municipal code, checking zoning laws, and building your unified checklist.
-                </p>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </main>
-
-        {/* Right — what we know */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <div className="text-xs uppercase tracking-[0.14em] text-text-secondary">
-              What we know so far
-            </div>
-            <dl className="mt-4 space-y-3 text-sm">
-              {(
-                [
-                  ["Business", known.business],
-                  ["Type", known.businessType],
-                  ["Location", known.address],
-                  ["Hours", known.hours],
-                  ["Power", known.power],
-                  ["Employees", known.employees],
-                ] as const
-              ).map(([k, v]) => (
-                <div key={k}>
-                  <dt className="text-xs text-text-secondary">{k}</dt>
-                  <dd
-                    className={`mt-0.5 ${v ? "text-foreground" : "text-text-secondary/40"
-                      }`}
-                  >
-                    {v || "—"}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <div className="mt-5 border-t border-border pt-4 text-xs text-text-secondary">
-              Pre-filling forms in the background as you answer.
-            </div>
-          </div>
-        </aside>
-      </div>
-
+            </AnimatePresence>
+          )}
+        </div>
+      </main>
       <SiteFooter />
     </div>
-  );
+  )
 }
