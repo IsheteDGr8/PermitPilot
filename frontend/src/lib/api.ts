@@ -1,15 +1,19 @@
 import type { IntakeData, EvaluationResponse } from './types';
 
-const API_BASE = '/api';
+const API_BASE = 'http://localhost:8080/api';
 
 /**
  * Submit business intake data for multi-agent evaluation.
  */
-export async function evaluatePermit(intakeData: IntakeData): Promise<EvaluationResponse> {
-  const res = await fetch(`${API_BASE}/evaluate`, {
+export async function evaluatePermit(intakeData: IntakeData, userId?: string): Promise<EvaluationResponse> {
+  // Attach the user_id to the payload before sending it to the backend
+  const payload = userId ? { ...intakeData, user_id: userId } : intakeData;
+
+  // FIXED: Updated route to match backend's /api/evaluate-permit
+  const res = await fetch(`${API_BASE}/evaluate-permit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(intakeData),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
