@@ -1,6 +1,6 @@
 import type { IntakeData, EvaluationResponse } from './types';
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'https://permitpilot-nf2x.onrender.com/api';
 
 /**
  * Submit business intake data for multi-agent evaluation.

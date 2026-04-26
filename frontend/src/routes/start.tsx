@@ -97,7 +97,7 @@ function DualStartFlow() {
     setError(null)
     try {
       setStatusText('Extracting business details...')
-      const parseRes = await fetch("http://localhost:8080/api/parse-intake", {
+      const parseRes = await fetch("https://permitpilot-nf2x.onrender.com/api/parse-intake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description })
