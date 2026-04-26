@@ -60,7 +60,7 @@ app.post('/api/evaluate', async (req, res) => {
     ];
 
     const startTime = Date.now();
-    
+
     // Launch agents with staggered delays (500ms apart) to spread rate limit load
     const agentPromises = agentDefs.map((agent, index) => {
       return new Promise(resolve => {
@@ -142,9 +142,20 @@ app.post('/api/evaluate', async (req, res) => {
     // =========================================
     // PHASE 5: Save to Database
     // =========================================
-    console.log('\n[💾] Saving to database...');
-    await saveApplication(appId, userId, intakeData, agentResults, crossAgentConflicts, checklist, totalCost, overallStatus);
-    console.log('  [✅] Saved successfully');
+    // 💾 Save to Supabase Database
+    console.log(`[💾] Saving application ${intakeData.application_id} to database...`);
+    const { error: dbError } = await supabase
+      .from('applications')
+      .insert([
+        {
+          application_id: intakeData.application_id,
+          user_id: intakeData.user_id, // <--- NEW: Save the ownership!
+          project_type: intakeData.project_type,
+          status: hasConflict ? 'Action Required' : 'Approved',
+          conflict_detected: hasConflict,
+          checklist_data: { agent_details: allResults, unified_checklist: finalChecklist }
+        }
+      ]);
 
     // =========================================
     // Return unified response
@@ -224,7 +235,7 @@ function detectCrossAgentConflicts(agentResults) {
       // Common conflict patterns:
       // 1. Zoning approves location but Fire has proximity issues
       if (a.agent?.includes('Zoning') && b.agent?.includes('Fire') ||
-          a.agent?.includes('Fire') && b.agent?.includes('Zoning')) {
+        a.agent?.includes('Fire') && b.agent?.includes('Zoning')) {
         const zoningAgent = a.agent?.includes('Zoning') ? a : b;
         const fireAgent2 = a.agent?.includes('Fire') ? a : b;
 
@@ -245,7 +256,7 @@ function detectCrossAgentConflicts(agentResults) {
 
       // 2. Building approves but Health requires additional plumbing
       if (a.agent?.includes('Building') && b.agent?.includes('Health') ||
-          a.agent?.includes('Health') && b.agent?.includes('Building')) {
+        a.agent?.includes('Health') && b.agent?.includes('Building')) {
         const buildAgent = a.agent?.includes('Building') ? a : b;
         const healthAg = a.agent?.includes('Health') ? a : b;
 

@@ -44,60 +44,37 @@ function UserPortal() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (!session) {
-        navigate({ to: '/auth' })
-      } else {
-        fetchApplications(session.user.id)
-      }
-    })
+    fetchApplications();
+  }, []);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (!session) {
-        navigate({ to: '/auth' })
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [navigate])
-
-  const fetchApplications = async (userId: string) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await getApplications(userId)
-      setApplications(data.applications || [])
-    } catch (err: any) {
-      setError(err.message || 'Failed to connect to the backend.')
-    } finally {
-      setIsLoading(false)
+  const fetchApplications = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate({ to: '/auth' });
+      return;
     }
-  }
 
-  const handleDelete = async (e: React.MouseEvent, appId: string) => {
-    e.stopPropagation()
-    if (!session?.user?.id) return
-    if (!confirm('Are you sure you want to delete this business analysis?')) return
-    
-    setDeletingId(appId)
-    try {
-      await deleteApplication(appId, session.user.id)
-      setApplications(apps => apps.filter(a => a.application_id !== appId))
-    } catch (err: any) {
-      alert('Failed to delete application: ' + err.message)
-    } finally {
-      setDeletingId(null)
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('user_id', user.id) // <--- NEW: ONLY fetch this user's businesses!
+      .order('created_at', { ascending: false });
+
+    if (data) setApplications(data);
+    setLoading(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    // Make sure we are matching the exact postgres UUID column, not the application_id text string
+    const { error } = await supabase.from('applications').delete().eq('id', id);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to delete application.");
+    } else {
+      setApplications(applications.filter(app => app.id !== id));
     }
-  }
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    navigate({ to: '/' })
-  }
-
-  if (!session) return null
+  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -219,8 +196,8 @@ function UserPortal() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <StatusBadge status={app.overall_status === 'all_clear' ? 'approved' : app.overall_status === 'conflicts_detected' ? 'conflict' : 'error'} />
-                  
-                  <button 
+
+                  <button
                     onClick={(e) => handleDelete(e, app.application_id)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--color-text-muted)' }}
                     title="Delete analysis"
