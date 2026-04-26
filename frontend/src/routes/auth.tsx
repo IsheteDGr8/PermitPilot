@@ -87,7 +87,8 @@ function AuthPage() {
             </div>
           )}
 
-          <form onSubmit={handleEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* FIXED: The onSubmit requires an arrow function to pass the isLogin parameter properly */}
+          <form onSubmit={(e) => handleEmailAuth(e, isLogin)} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>Email Address</label>
               <div style={{ position: 'relative' }}>

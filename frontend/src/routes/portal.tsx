@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
 import { StatusBadge } from '@/components/status-badge'
-import { getApplications, deleteApplication } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import type { IntakeData, AgentResult, CrossAgentConflict, ChecklistItem } from '@/lib/types'
 
@@ -24,7 +23,7 @@ export const Route = createFileRoute('/portal')({
 })
 
 interface DbApplication {
-  id: number;
+  id: string | number;
   application_id: string;
   intake_data: IntakeData;
   agent_results: AgentResult[];
@@ -37,7 +36,7 @@ interface DbApplication {
 
 function UserPortal() {
   const navigate = useNavigate()
-  const [session, setSession] = useState<any>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [applications, setApplications] = useState<DbApplication[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,25 +53,38 @@ function UserPortal() {
       return;
     }
 
+    // Safely store the email for the UI so it doesn't crash on load
+    setUserEmail(user.email || null);
+
     const { data, error } = await supabase
       .from('applications')
       .select('*')
-      .eq('user_id', user.id) // <--- NEW: ONLY fetch this user's businesses!
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (data) setApplications(data);
-    setLoading(false);
+    if (error) setError(error.message);
+    setIsLoading(false); // Fixed typo from setLoading
   };
 
-  const handleDelete = async (id: string) => {
-    // Make sure we are matching the exact postgres UUID column, not the application_id text string
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: '/' });
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string | number) => {
+    e.stopPropagation(); // Prevents the card click event from firing when hitting delete
+    setDeletingId(id.toString());
+
     const { error } = await supabase.from('applications').delete().eq('id', id);
 
     if (error) {
       console.error(error);
       alert("Failed to delete application.");
+      setDeletingId(null);
     } else {
       setApplications(applications.filter(app => app.id !== id));
+      setDeletingId(null);
     }
   };
 
@@ -88,7 +100,7 @@ function UserPortal() {
               My Businesses
             </h1>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', marginTop: '0.25rem' }}>
-              Logged in as {session.user.email}
+              Logged in as {userEmail || "loading..."}
             </p>
           </div>
 
@@ -102,7 +114,6 @@ function UserPortal() {
           </div>
         </div>
 
-        {/* Loading state */}
         {isLoading && (
           <div style={{ textAlign: 'center', padding: '4rem' }}>
             <Plane size={32} style={{ color: 'var(--color-accent)', margin: '0 auto 1rem', animation: 'float 3s ease-in-out infinite' }} />
@@ -110,7 +121,6 @@ function UserPortal() {
           </div>
         )}
 
-        {/* Error state */}
         {error && !isLoading && (
           <div style={{
             padding: '1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--color-danger-bg)',
@@ -122,7 +132,6 @@ function UserPortal() {
           </div>
         )}
 
-        {/* Empty state */}
         {!isLoading && !error && applications.length === 0 && (
           <div className="glass-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
             <FileText size={48} style={{ color: 'var(--color-text-muted)', margin: '0 auto 1rem' }} />
@@ -136,19 +145,18 @@ function UserPortal() {
           </div>
         )}
 
-        {/* Applications List */}
         {!isLoading && !error && applications.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {applications.map((app, i) => (
               <motion.div
-                key={app.id || app.application_id}
+                key={app.id.toString()}
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 className="glass-card glass-card-hover"
                 style={{
                   display: 'flex', alignItems: 'center', padding: '1.25rem 1.5rem', gap: '1.5rem', cursor: 'pointer',
-                  opacity: deletingId === app.application_id ? 0.5 : 1
+                  opacity: deletingId === app.id.toString() ? 0.5 : 1
                 }}
                 onClick={() => {
                   localStorage.setItem('permitResult', JSON.stringify({
@@ -161,7 +169,7 @@ function UserPortal() {
                     evaluated_at: app.created_at
                   }))
                   localStorage.setItem('permitIntake', JSON.stringify(app.intake_data))
-                  localStorage.setItem('permitFromPortal', 'true') // Flag to show "Back to Portal" in review
+                  localStorage.setItem('permitFromPortal', 'true')
                   window.location.href = '/review'
                 }}
               >
@@ -198,7 +206,7 @@ function UserPortal() {
                   <StatusBadge status={app.overall_status === 'all_clear' ? 'approved' : app.overall_status === 'conflicts_detected' ? 'conflict' : 'error'} />
 
                   <button
-                    onClick={(e) => handleDelete(e, app.application_id)}
+                    onClick={(e) => handleDelete(e, app.id)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--color-text-muted)' }}
                     title="Delete analysis"
                   >
