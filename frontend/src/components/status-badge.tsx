@@ -1,49 +1,36 @@
-import type { AgentStatus } from '@/lib/types'
-import { CheckCircle2, AlertTriangle, HelpCircle, XCircle } from 'lucide-react'
+import type { AgentStatus } from "@/data/scenario";
+import { Check, AlertTriangle, CircleDashed, Loader2 } from "lucide-react";
 
-const statusConfig: Record<string, { label: string; className: string; Icon: typeof CheckCircle2 }> = {
-  approved: {
-    label: 'Approved',
-    className: 'status-approved',
-    Icon: CheckCircle2,
-  },
-  conflict: {
-    label: 'Conflict',
-    className: 'status-conflict',
-    Icon: AlertTriangle,
-  },
-  'needs-info': {
-    label: 'Needs Info',
-    className: 'status-needs-info',
-    Icon: HelpCircle,
-  },
-  error: {
-    label: 'Error',
-    className: 'status-error',
-    Icon: XCircle,
-  },
-}
-
-export function StatusBadge({ status }: { status: AgentStatus | string }) {
-  const normalized = (status || 'error').toLowerCase()
-  const config = statusConfig[normalized] || statusConfig.error
-
+export function StatusBadge({ status, compact = false }: { status: AgentStatus; compact?: boolean }) {
+  const map: Record<AgentStatus, { label: string; cls: string; Icon: typeof Check }> = {
+    approved: {
+      label: "Approved",
+      cls: "bg-success/10 text-success border-success/30",
+      Icon: Check,
+    },
+    conflict: {
+      label: "Conflict",
+      cls: "bg-conflict/10 text-conflict border-conflict/30",
+      Icon: AlertTriangle,
+    },
+    "needs-info": {
+      label: "Needs info",
+      cls: "bg-gold/15 text-gold-foreground border-gold/40 dark:text-gold",
+      Icon: CircleDashed,
+    },
+    reasoning: {
+      label: "Reasoning",
+      cls: "bg-primary/10 text-primary border-primary/30",
+      Icon: Loader2,
+    },
+  };
+  const { label, cls, Icon } = map[status];
   return (
     <span
-      className={config.className}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.35rem',
-        padding: '0.25rem 0.75rem',
-        borderRadius: '9999px',
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        letterSpacing: '0.02em',
-      }}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}
     >
-      <config.Icon size={14} />
-      {config.label}
+      <Icon className={`h-3 w-3 ${status === "reasoning" ? "animate-spin" : ""}`} />
+      {!compact && label}
     </span>
-  )
+  );
 }

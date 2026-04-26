@@ -1,99 +1,59 @@
-import { Link } from '@tanstack/react-router'
-import { Plane } from 'lucide-react'
+import { Link } from "@tanstack/react-router";
+import { ThemeToggle } from "./theme-toggle";
+import { Building2 } from "lucide-react";
 
 export function SiteHeader() {
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 30,
-        borderBottom: '1px solid var(--color-border)',
-        background: 'rgba(10, 10, 15, 0.85)',
-        backdropFilter: 'blur(16px)',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 var(--spacing-page)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '64px',
-        }}
-      >
-        <Link
-          to="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            textDecoration: 'none',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          <Plane size={24} style={{ color: 'var(--color-accent)' }} />
-          <span style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-            Permit<span style={{ color: 'var(--color-accent)' }}>Pilot</span>
+    <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
+        <Link to="/" className="flex items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
+            <Building2 className="h-4 w-4" />
+          </span>
+          <span className="font-serif text-lg leading-none">
+            Civic Permit Navigator
           </span>
         </Link>
-
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <Link
-            to="/admin"
-            style={{
-              color: 'var(--color-text-secondary)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
-          >
-            Admin
-          </Link>
+        <nav className="flex items-center gap-1 text-sm">
           <Link
             to="/start"
-            style={{
-              color: 'var(--color-text-secondary)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+            className="rounded-md px-3 py-1.5 text-text-secondary transition-colors hover:bg-accent hover:text-foreground"
+            activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
           >
-            Start Permit
+            Start
           </Link>
+          <Link
+            to="/review"
+            className="rounded-md px-3 py-1.5 text-text-secondary transition-colors hover:bg-accent hover:text-foreground"
+            activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
+          >
+            Review
+          </Link>
+          <Link
+            to="/admin"
+            className="rounded-md px-3 py-1.5 text-text-secondary transition-colors hover:bg-accent hover:text-foreground"
+            activeProps={{ className: "rounded-md px-3 py-1.5 bg-accent text-foreground" }}
+          >
+            City Admin
+          </Link>
+          <div className="ml-2">
+            <ThemeToggle />
+          </div>
         </nav>
       </div>
     </header>
-  )
+  );
 }
 
 export function SiteFooter() {
   return (
-    <footer
-      style={{
-        borderTop: '1px solid var(--color-border)',
-        padding: '2rem var(--spacing-page)',
-        textAlign: 'center',
-        color: 'var(--color-text-muted)',
-        fontSize: '0.85rem',
-      }}
-    >
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <Plane size={16} style={{ color: 'var(--color-accent)' }} />
-          <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>PermitPilot</span>
+    <footer className="mt-24 border-t border-border">
+      <div className="mx-auto flex max-w-[1200px] flex-col items-start justify-between gap-2 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
+        <div>Civic Permit Navigator · Demo for Riverbend, OR</div>
+        <div className="font-mono text-xs">
+          v0.1 · Five agencies. One conversation. Zero contradictions.
         </div>
-        <p>From 14 Weeks to 14 Minutes · AI-Powered Civic Permit Navigator</p>
-        <p style={{ marginTop: '0.25rem' }}>Built with Google Gemini · {new Date().getFullYear()}</p>
       </div>
     </footer>
-  )
+  );
 }

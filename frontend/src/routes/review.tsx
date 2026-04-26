@@ -1,443 +1,533 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronDown,
-  ChevronUp,
   AlertTriangle,
+  Sparkles,
   ArrowRight,
   Clock,
-  DollarSign,
-  FileText,
-  CheckCircle2,
-  Lightbulb,
-  Plane,
-  ArrowLeft,
-} from 'lucide-react'
-import { SiteHeader, SiteFooter } from '@/components/site-chrome'
-import { StatusBadge } from '@/components/status-badge'
-import { getAgentIcon, getAgentColor } from '@/components/agent-icons'
-import type { EvaluationResponse, IntakeData } from '@/lib/types'
+  Download,
+} from "lucide-react";
+import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import {
+  agents,
+  applicant,
+  checklist,
+  conflict,
+  forms,
+  citations,
+} from "@/data/scenario";
+import { agentIcons } from "@/components/agent-icons";
+import { StatusBadge } from "@/components/status-badge";
+import { CitationPanel, ReasoningText, CitationPill } from "@/components/citation";
 
-export const Route = createFileRoute('/review')({
-  component: ReviewPage,
-})
+export const Route = createFileRoute("/review")({
+  head: () => ({
+    meta: [
+      { title: "Agent Council Review — Civic Permit Navigator" },
+      {
+        name: "description",
+        content:
+          "Six agents read the code, surface one conflict to reconcile, and hand back a dependency-ordered checklist with pre-filled forms.",
+      },
+      {
+        property: "og:title",
+        content: "Agent Council Review — Civic Permit Navigator",
+      },
+      {
+        property: "og:description",
+        content: "Five agencies. One conversation. Zero contradictions.",
+      },
+    ],
+  }),
+  component: Review,
+});
 
-function ReviewPage() {
-  const [result, setResult] = useState<EvaluationResponse | null>(null)
-  const [intake, setIntake] = useState<IntakeData | null>(null)
-  const [expandedAgents, setExpandedAgents] = useState<Set<number>>(new Set())
+type AgentDetail = {
+  agency: string;
+  status: "approved" | "conflict" | "needs-info";
+  notes: string;
+  citations?: string[];
+  required_forms?: Array<{ form_name: string; url: string }>;
+};
+
+type UnifiedChecklistItem = {
+  form_name: string;
+  url: string;
+};
+
+type PermitResult = {
+  status: string;
+  conflict_detected: boolean;
+  agent_details: AgentDetail[];
+  unified_checklist: UnifiedChecklistItem[];
+};
+
+const reasoningPhrases = [
+  "Cross-referencing §7.32 with §15.04…",
+  "Resolving variance under §9.14.225…",
+  "Sequencing inspections by dependency graph…",
+  "Verifying commissary status under §8.20.030…",
+];
+
+function Review() {
+  const [openCitation, setOpenCitation] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [openForm, setOpenForm] = useState<string>(forms[0].id);
+  const [reasoningPhrase, setReasoningPhrase] = useState(0);
+  const [permitResult, setPermitResult] = useState<PermitResult | null>(null);
 
   useEffect(() => {
-    const savedResult = localStorage.getItem('permitResult')
-    const savedIntake = localStorage.getItem('permitIntake')
-    if (savedResult) setResult(JSON.parse(savedResult))
-    if (savedIntake) setIntake(JSON.parse(savedIntake))
-  }, [])
+    const storedResult = localStorage.getItem("permitResult");
+    if (storedResult) {
+      try {
+        const parsed = JSON.parse(storedResult);
+        setPermitResult(parsed);
+      } catch (e) {
+        console.error("Failed to parse permitResult from localStorage:", e);
+      }
+    }
+  }, []);
 
-  const toggleAgent = (index: number) => {
-    setExpandedAgents((prev) => {
-      const next = new Set(prev)
-      next.has(index) ? next.delete(index) : next.add(index)
-      return next
-    })
-  }
+  useEffect(() => {
+    const t = setInterval(() => {
+      setReasoningPhrase((p) => (p + 1) % reasoningPhrases.length);
+    }, 2400);
+    return () => clearInterval(t);
+  }, []);
 
-  if (!result) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <SiteHeader />
-        <div style={{ flex: 1, display: 'grid', placeItems: 'center', textAlign: 'center', padding: '3rem' }}>
-          <div>
-            <Plane size={48} style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }} />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>No evaluation found</h2>
-            <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>Start a new permit application to see your results.</p>
-            <Link to="/start" className="btn-primary">
-              Start Application <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-        <SiteFooter />
-      </div>
-    )
-  }
-
-  const approvedCount = result.agents.filter((a) => a.status === 'approved').length
-  const conflictCount = result.agents.filter((a) => a.status === 'conflict').length
+  const phasesOrder: Array<typeof checklist[number]["phase"]> = [
+    "Pre-application",
+    "Documentation",
+    "Inspections",
+    "Submission",
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen">
       <SiteHeader />
 
-      <main style={{ flex: 1, maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '2rem var(--spacing-page)' }}>
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Link to="/start" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            <ArrowLeft size={14} /> New Application
-          </Link>
-
-          <div className="glass-card" style={{ padding: '1.5rem 2rem', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.25rem', letterSpacing: '-0.02em' }}>
-                  {intake?.business_info?.business_name || 'Business Application'}
-                </h1>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
-                  {intake?.project_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} · {intake?.location_details?.operating_zone || 'Unknown Location'}
-                </p>
+      <div className="mx-auto max-w-[1200px] px-6 py-10">
+        {/* Applicant summary */}
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.14em] text-text-secondary">
+                Application
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: result.overall_status === 'all_clear' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                  border: `1px solid ${result.overall_status === 'all_clear' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                  color: result.overall_status === 'all_clear' ? 'var(--color-success)' : 'var(--color-danger)',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                }}>
-                  {result.overall_status === 'all_clear' ? '✅ All Clear' : `⚠️ ${conflictCount} Conflict${conflictCount !== 1 ? 's' : ''} Detected`}
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                  <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.25rem' }} />
-                  Evaluated in {result.evaluation_time_seconds}s
-                </p>
-              </div>
+              <h1 className="mt-1 text-3xl">
+                {applicant.business}{" "}
+                <span className="text-text-secondary"> · {applicant.permit}</span>
+              </h1>
+              <p className="mt-1 text-text-secondary">{applicant.summary}</p>
             </div>
-
-            {/* Stats row */}
-            <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
-                <span style={{ color: 'var(--color-text-secondary)' }}>{approvedCount} Approved</span>
+            <div className="flex items-center gap-6 text-sm">
+              <div>
+                <div className="text-xs text-text-secondary">Owner</div>
+                <div className="mt-0.5">{applicant.owner}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                <AlertTriangle size={16} style={{ color: 'var(--color-danger)' }} />
-                <span style={{ color: 'var(--color-text-secondary)' }}>{conflictCount} Conflicts</span>
+              <div>
+                <div className="text-xs text-text-secondary">Jurisdiction</div>
+                <div className="mt-0.5">{applicant.city}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                <DollarSign size={16} style={{ color: 'var(--color-warning)' }} />
-                <span style={{ color: 'var(--color-text-secondary)' }}>Est. ${result.total_estimated_cost?.toLocaleString() || '0'}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                <FileText size={16} style={{ color: 'var(--color-info)' }} />
-                <span style={{ color: 'var(--color-text-secondary)' }}>{result.checklist?.length || 0} Checklist Items</span>
+              <div className="rounded-lg border border-gold/40 bg-gold/10 px-4 py-2 text-center">
+                <div className="text-xs text-text-secondary">
+                  Estimated time to issuance
+                </div>
+                <div className="mt-0.5 font-serif text-xl">
+                  {applicant.estDays} days
+                </div>
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Cross-Agent Conflicts Banner */}
-        {result.cross_agent_conflicts?.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{ marginBottom: '2rem' }}
-          >
-            {result.cross_agent_conflicts.map((conflict, i) => (
-              <div
-                key={i}
-                className="glass-card"
-                style={{
-                  padding: '1.25rem 1.5rem',
-                  marginBottom: '0.75rem',
-                  borderColor: 'rgba(239, 68, 68, 0.3)',
-                  background: 'linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(18,18,26,0.8) 100%)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                  <AlertTriangle size={20} style={{ color: 'var(--color-danger)', flexShrink: 0, marginTop: '2px' }} />
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--color-danger)' }}>
-                      Cross-Department Conflict: {conflict.agents.join(' ↔ ')}
-                    </h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
-                      {conflict.description}
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {conflict.resolution_options?.map((opt, j) => (
-                        <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', fontSize: '0.85rem' }}>
-                          <Lightbulb size={14} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: '2px' }} />
-                          <span style={{ color: 'var(--color-text-primary)' }}>{opt}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+        {/* Conflict banner */}
+        <div className="mt-8 rounded-xl border border-conflict/40 bg-conflict/5 p-6">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 grid h-7 w-7 place-items-center rounded-md bg-conflict/15 text-conflict">
+              <AlertTriangle className="h-4 w-4" />
+            </span>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-conflict">
+                Two interpretations to reconcile
               </div>
-            ))}
-          </motion.div>
-        )}
+              <h2 className="mt-1 text-2xl">{conflict.title}</h2>
+              <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-foreground/90">
+                {conflict.description.split(/(§\d+\.\d+\.\d+)/g).map((part, i) =>
+                  /^§\d+\.\d+\.\d+$/.test(part) ? (
+                    <span key={i} className="citation">
+                      {part}
+                    </span>
+                  ) : (
+                    <span key={i}>{part}</span>
+                  )
+                )}
+              </p>
+            </div>
+          </div>
 
-        {/* Agent Results */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>Agent Evaluations</h2>
-
-          {result.agents.map((agent, i) => {
-            const Icon = getAgentIcon(agent.agent, agent.iconKey)
-            const color = getAgentColor(agent.agent, agent.iconKey)
-            const expanded = expandedAgents.has(i)
-
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="glass-card"
-                style={{ overflow: 'hidden' }}
-              >
-                {/* Agent Header (clickable) */}
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {conflict.options.map((o, i) => {
+              const isChosen = chosen === o.id;
+              return (
                 <button
-                  onClick={() => toggleAgent(i)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '1rem 1.25rem',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'inherit',
-                    textAlign: 'left',
-                  }}
+                  key={o.id}
+                  onClick={() => setChosen(o.id)}
+                  className={`text-left rounded-lg border p-4 transition-all ${
+                    isChosen
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-surface hover:border-primary/40"
+                  }`}
                 >
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: 'var(--radius-sm)',
-                      display: 'grid',
-                      placeItems: 'center',
-                      background: `${color}15`,
-                      border: `1px solid ${color}30`,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Icon size={18} style={{ color }} />
+                  <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <span className="font-mono">Option {i + 1}</span>
+                    {i === 0 && (
+                      <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
+                        Recommended
+                      </span>
+                    )}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{agent.agent}</span>
-                      <StatusBadge status={agent.status} />
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {agent.summary || 'Evaluation complete'}
-                    </p>
+                  <div className="mt-2 text-sm font-medium">{o.title}</div>
+                  <div className="mt-2 text-[13px] leading-relaxed text-text-secondary">
+                    {o.detail}
                   </div>
-                  {expanded ? <ChevronUp size={18} style={{ color: 'var(--color-text-muted)' }} /> : <ChevronDown size={18} style={{ color: 'var(--color-text-muted)' }} />}
+                  <div className="mt-3 border-t border-border pt-2 text-[12px] italic text-foreground/80">
+                    {o.tradeoff}
+                  </div>
                 </button>
+              );
+            })}
+          </div>
+        </div>
 
-                {/* Expanded Details */}
-                <AnimatePresence>
-                  {expanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      style={{ overflow: 'hidden' }}
+        {/* Agent Council Grid */}
+        <div className="mt-12">
+          <div className="mb-5 flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl">Agent Council</h2>
+              <p className="text-sm text-text-secondary">
+                Each agent reads the code independently. Click a citation to read the source text.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-xs text-text-secondary">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span className="reasoning-cursor">{reasoningPhrases[reasoningPhrase]}</span>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {permitResult && permitResult.agent_details ? (
+              permitResult.agent_details.map((agentDetail, idx) => {
+                const isZoningConflict =
+                  agentDetail.agency === "Zoning Authority" &&
+                  agentDetail.status === "conflict" &&
+                  permitResult.conflict_detected;
+
+                return (
+                  <motion.div
+                    key={agentDetail.agency}
+                    layout
+                    className={`rounded-xl border p-5 ${
+                      isZoningConflict
+                        ? "border-red-500 bg-red-50 dark:bg-red-950/30"
+                        : "border-border bg-surface"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span className="grid h-9 w-9 place-items-center rounded-md bg-primary/8 text-primary">
+                          <AlertTriangle className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <div className="font-medium">{agentDetail.agency}</div>
+                          <div className="text-xs text-text-secondary">
+                            {agentDetail.status === "conflict"
+                              ? "Conflict Detected"
+                              : agentDetail.status === "needs-info"
+                              ? "Needs Information"
+                              : "Approved"}
+                          </div>
+                        </div>
+                      </div>
+                      <StatusBadge status={agentDetail.status} />
+                    </div>
+
+                    <p className="mt-4 text-[14px] leading-relaxed text-foreground/90">
+                      {agentDetail.notes}
+                    </p>
+
+                    {agentDetail.citations && agentDetail.citations.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {agentDetail.citations.map((citation) => (
+                          <span
+                            key={citation}
+                            className="inline-block rounded-md bg-primary/8 px-2.5 py-1 text-[11px] font-medium text-primary"
+                          >
+                            {citation}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })
+            ) : (
+              agents.map((a) => {
+                const Icon = agentIcons[a.iconKey];
+                const isOpen = !!expanded[a.id];
+                return (
+                  <motion.div
+                    key={a.id}
+                    layout
+                    className="rounded-xl border border-border bg-surface p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span className="grid h-9 w-9 place-items-center rounded-md bg-primary/8 text-primary">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <div className="font-medium">{a.name} Agent</div>
+                          <div className="text-xs text-text-secondary">
+                            {a.role}
+                          </div>
+                        </div>
+                      </div>
+                      <StatusBadge status={a.status} />
+                    </div>
+
+                    <p className="mt-4 text-[14px] leading-relaxed text-foreground/90">
+                      {a.summary}
+                    </p>
+
+                    <button
+                      onClick={() =>
+                        setExpanded((e) => ({ ...e, [a.id]: !e[a.id] }))
+                      }
+                      className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:opacity-80"
                     >
-                      <div style={{ padding: '0 1.25rem 1.25rem', borderTop: '1px solid var(--color-border)' }}>
-                        {/* Findings */}
-                        {agent.findings?.length > 0 && (
-                          <div style={{ marginTop: '1rem' }}>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                              Findings
-                            </h4>
-                            {agent.findings.map((f, fi) => (
-                              <div
-                                key={fi}
-                                style={{
-                                  padding: '0.6rem 0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: f.result === 'fail' ? 'var(--color-danger-bg)' : f.result === 'warning' ? 'var(--color-warning-bg)' : 'var(--color-bg-elevated)',
-                                  border: `1px solid ${f.result === 'fail' ? 'rgba(239,68,68,0.2)' : f.result === 'warning' ? 'rgba(245,158,11,0.2)' : 'var(--color-border)'}`,
-                                  marginBottom: '0.4rem',
-                                  fontSize: '0.85rem',
-                                }}
-                              >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                  <span style={{ fontWeight: 600 }}>{f.rule_title || f.rule_id}</span>
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
-                                    {f.citation}
-                                  </span>
-                                </div>
-                                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.83rem' }}>{f.explanation}</p>
-                                {f.cost && (
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-warning)', marginTop: '0.25rem', display: 'inline-block' }}>
-                                    💰 Est. cost: ${f.cost.toLocaleString()}
+                      {isOpen ? "Hide reasoning" : "Show reasoning"}
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 transition-transform ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          key="reason"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.22, ease: "easeOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-3 border-t border-border pt-3">
+                            <ReasoningText
+                              text={a.reasoning}
+                              onOpen={setOpenCitation}
+                            />
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {a.citationIds.map((id) => (
+                                <CitationPill
+                                  key={id}
+                                  id={id}
+                                  onOpen={setOpenCitation}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Bottom — checklist + forms */}
+        <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <section>
+            <h2 className="text-2xl">Unified checklist</h2>
+            <p className="text-sm text-text-secondary">
+              Dependency-ordered. Submit when every box is green.
+            </p>
+            {permitResult && permitResult.unified_checklist ? (
+              <div className="mt-5 space-y-3">
+                {permitResult.unified_checklist.map((item, idx) => (
+                  <a
+                    key={idx}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 transition-all hover:border-primary hover:bg-primary/5"
+                  >
+                    <div>
+                      <div className="text-sm font-medium">{item.form_name}</div>
+                      <div className="text-xs text-text-secondary">
+                        Click to download
+                      </div>
+                    </div>
+                    <Download className="h-4 w-4 text-primary" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 space-y-6">
+                {phasesOrder.map((phase) => {
+                  const items = checklist.filter((c) => c.phase === phase);
+                  return (
+                    <div key={phase}>
+                      <div className="mb-2 flex items-center gap-3">
+                        <h3 className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
+                          {phase}
+                        </h3>
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="font-mono text-[11px] text-text-secondary">
+                          {items.length} items
+                        </span>
+                      </div>
+                      <ul className="overflow-hidden rounded-xl border border-border bg-surface">
+                        {items.map((item, i) => (
+                          <li
+                            key={item.id}
+                            className={`flex items-center gap-4 px-4 py-3 ${
+                              i > 0 ? "border-t border-border" : ""
+                            }`}
+                          >
+                            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border bg-background font-mono text-[10px] text-text-secondary">
+                              {item.id.slice(1)}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm">{item.title}</div>
+                              <div className="mt-0.5 flex items-center gap-3 text-xs text-text-secondary">
+                                <span>{item.agency}</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {item.estTime}
+                                </span>
+                                {item.dependsOn && (
+                                  <span className="font-mono text-[11px]">
+                                    ← depends on {item.dependsOn.join(", ")}
                                   </span>
                                 )}
                               </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Agent-level Conflicts */}
-                        {agent.conflicts?.length > 0 && (
-                          <div style={{ marginTop: '1rem' }}>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-danger)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                              Conflicts & Alternatives
-                            </h4>
-                            {agent.conflicts.map((c, ci) => (
-                              <div
-                                key={ci}
-                                style={{
-                                  padding: '0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: 'var(--color-danger-bg)',
-                                  border: '1px solid rgba(239,68,68,0.2)',
-                                  marginBottom: '0.4rem',
-                                }}
-                              >
-                                <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>{c.description}</p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                  {c.alternatives?.map((alt, ai) => (
-                                    <div key={ai} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.35rem', fontSize: '0.83rem' }}>
-                                      <Lightbulb size={13} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: '2px' }} />
-                                      <span style={{ color: 'var(--color-text-primary)' }}>{alt}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Requirements */}
-                        {agent.requirements?.length > 0 && (
-                          <div style={{ marginTop: '1rem' }}>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-                              Requirements
-                            </h4>
-                            {agent.requirements.map((r, ri) => (
-                              <div
-                                key={ri}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: '0.5rem',
-                                  padding: '0.5rem 0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: 'var(--color-bg-elevated)',
-                                  border: '1px solid var(--color-border)',
-                                  marginBottom: '0.3rem',
-                                  fontSize: '0.85rem',
-                                }}
-                              >
-                                <div style={{
-                                  width: '6px', height: '6px', borderRadius: '50%', marginTop: '6px', flexShrink: 0,
-                                  background: r.priority === 'required' ? 'var(--color-danger)' : r.priority === 'recommended' ? 'var(--color-warning)' : 'var(--color-info)',
-                                }} />
-                                <div style={{ flex: 1 }}>
-                                  <span>{r.action}</span>
-                                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                    {r.estimated_cost != null && <span>💰 ${r.estimated_cost.toLocaleString()}</span>}
-                                    {r.estimated_time && <span>⏱️ {r.estimated_time}</span>}
-                                    <span style={{
-                                      padding: '0.1rem 0.4rem',
-                                      borderRadius: '4px',
-                                      background: r.priority === 'required' ? 'var(--color-danger-bg)' : r.priority === 'recommended' ? 'var(--color-warning-bg)' : 'var(--color-info-bg)',
-                                      color: r.priority === 'required' ? 'var(--color-danger)' : r.priority === 'recommended' ? 'var(--color-warning)' : 'var(--color-info)',
-                                      fontWeight: 600,
-                                    }}>
-                                      {r.priority}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )
-          })}
-        </div>
-
-        {/* Checklist Preview */}
-        {result.checklist?.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-              📋 Dependency-Ordered Checklist
-            </h2>
-            <div className="glass-card" style={{ padding: '1.25rem' }}>
-              {result.checklist.map((item, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.75rem',
-                    padding: '0.75rem 0',
-                    borderBottom: i < result.checklist.length - 1 ? '1px solid var(--color-border-subtle)' : 'none',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      display: 'grid',
-                      placeItems: 'center',
-                      background: 'var(--color-accent-glow)',
-                      border: '1px solid rgba(124,92,252,0.3)',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: 'var(--color-accent)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.step}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 500 }}>{item.action}</p>
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
-                      <span>{item.source_agent}</span>
-                      {item.estimated_cost != null && <span>💰 ${item.estimated_cost.toLocaleString()}</span>}
-                      {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
+                            </div>
+                            <span className="font-mono text-xs text-text-secondary">
+                              {item.fee}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Total cost */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: '1rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid var(--color-border)',
-                fontWeight: 700,
-              }}>
-                <span>Total Estimated Cost</span>
-                <span style={{ color: 'var(--color-warning)', fontSize: '1.1rem' }}>
-                  ${result.total_estimated_cost?.toLocaleString() || '0'}
-                </span>
+                  );
+                })}
               </div>
+            )}
+          </section>
+
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <h2 className="text-2xl">Pre-filled forms</h2>
+            <p className="text-sm text-text-secondary">
+              Each field shows the citation behind its value.
+            </p>
+            <div className="mt-5 space-y-3">
+              {forms.map((f) => {
+                const isOpen = openForm === f.id;
+                return (
+                  <div
+                    key={f.id}
+                    className="overflow-hidden rounded-xl border border-border bg-surface"
+                  >
+                    <button
+                      onClick={() => setOpenForm(isOpen ? "" : f.id)}
+                      className="flex w-full items-center justify-between px-4 py-3 text-left"
+                    >
+                      <div>
+                        <div className="text-sm font-medium">{f.name}</div>
+                        <div className="text-xs text-text-secondary">
+                          {f.agency}
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+                        Review & sign <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.22 }}
+                          className="overflow-hidden"
+                        >
+                          <dl className="border-t border-border bg-background/50 p-4 text-sm">
+                            {f.fields.map((field) => (
+                              <div
+                                key={field.label}
+                                className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-2 first:pt-0 last:pb-0"
+                              >
+                                <dt className="text-xs text-text-secondary">
+                                  {field.label}
+                                </dt>
+                                <dd className="text-[13.5px]">
+                                  <span>{field.value}</span>
+                                  {field.citationId && (
+                                    <span className="ml-2 align-middle">
+                                      <button
+                                        onClick={() =>
+                                          setOpenCitation(field.citationId!)
+                                        }
+                                        className="citation"
+                                        title={
+                                          citations[field.citationId].title
+                                        }
+                                      >
+                                        {citations[field.citationId].code}
+                                      </button>
+                                    </span>
+                                  )}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
-          </motion.div>
-        )}
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/start" className="btn-secondary">
-            <ArrowLeft size={16} /> New Application
-          </Link>
+            {chosen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 rounded-xl border border-success/40 bg-success/5 p-4 text-sm"
+              >
+                <div className="font-medium text-success">
+                  Resolution selected
+                </div>
+                <p className="mt-1 text-foreground/90">
+                  The Orchestrator has updated the dependency graph and
+                  re-sequenced the checklist accordingly.
+                </p>
+              </motion.div>
+            )}
+          </aside>
         </div>
-      </main>
+      </div>
 
+      <CitationPanel openId={openCitation} onClose={() => setOpenCitation(null)} />
       <SiteFooter />
     </div>
-  )
+  );
 }

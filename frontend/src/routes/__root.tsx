@@ -1,17 +1,73 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+
+import appCss from "../styles.css?url";
+
+function NotFoundComponent() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-7xl font-bold text-foreground">404</h1>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Go home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createRootRoute({
-  component: RootLayout,
   head: () => ({
     meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'PermitPilot — AI-Powered Civic Permit Navigator' },
-      { name: 'description', content: 'From 14 Weeks to 14 Minutes. Navigate city permits with AI-powered multi-agent evaluation.' },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Civic Permit Navigator" },
+      { name: "description", content: "Five agencies. One conversation. Zero contradictions. A multi-agent guide to municipal permitting." },
+      { name: "author", content: "Civic Permit Navigator" },
+      { property: "og:title", content: "Civic Permit Navigator" },
+      { property: "og:description", content: "Five agencies. One conversation. Zero contradictions. A multi-agent guide to municipal permitting." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Civic Permit Navigator" },
+      { name: "twitter:description", content: "Five agencies. One conversation. Zero contradictions. A multi-agent guide to municipal permitting." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d2b0ca56-2e28-48e0-bc16-2e0154602b62/id-preview-d5c58cc6--4a035792-677d-4434-8761-b44bfb6a9a74.lovable.app-1777095132265.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d2b0ca56-2e28-48e0-bc16-2e0154602b62/id-preview-d5c58cc6--4a035792-677d-4434-8761-b44bfb6a9a74.lovable.app-1777095132265.png" },
+    ],
+    links: [
+      {
+        rel: "stylesheet",
+        href: appCss,
+      },
     ],
   }),
-})
+  shellComponent: RootShell,
+  component: RootComponent,
+  notFoundComponent: NotFoundComponent,
+});
 
-function RootLayout() {
-  return <Outlet />
+function RootShell({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+function RootComponent() {
+  return <Outlet />;
 }
