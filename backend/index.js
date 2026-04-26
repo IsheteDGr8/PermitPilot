@@ -61,7 +61,8 @@ app.post('/api/parse-intake', async (req, res) => {
     User Description: "${description}"
     Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Swapped to gemini-1.5-pro-latest to fix the 404 and use a new quota bucket
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
