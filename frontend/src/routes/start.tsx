@@ -211,7 +211,7 @@ function IntakePage() {
   const handleDemo = async () => {
     localStorage.setItem('permitIntake', JSON.stringify(DEMO_INTAKE))
     setIsEvaluating(true)
-    
+
     // Check user session
     const { data: { session } } = await supabase.auth.getSession()
     const intakeData = { ...DEMO_INTAKE, user_id: session?.user?.id || undefined }
