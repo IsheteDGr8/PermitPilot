@@ -275,35 +275,46 @@ app.post('/api/resolve-conflict', async (req, res) => {
   console.log(`\n[🔄] Resolving conflict for ${agentName}...`);
 
   try {
-    // 1. Inject the user's resolution into the payload so the AI reads it
+    // 1. Inject the user's resolution into the payload
     if (!intakeData.user_resolutions) intakeData.user_resolutions = {};
     intakeData.user_resolutions[agentName] = resolution;
 
-    // 2. Define the target agent
+    // 2. Map to the exact evaluators we already imported at the top of index.js!
+    const zoningAgent = require('./agents/zoning');
+    const healthAgent = require('./agents/health');
+    const fireAgent = require('./agents/fire');
+    const buildingAgent = require('./agents/building');
+    const licensingAgent = require('./agents/licensing');
+
     const allAgents = [
-      { name: 'Zoning Authority', role: 'Evaluate land use and zoning compliance', codeFile: 'zoning_code.json', iconKey: 'zoning' },
-      { name: 'Health Department', role: 'Evaluate food safety and sanitation', codeFile: 'health_code.json', iconKey: 'health' },
-      { name: 'Fire Marshal', role: 'Evaluate fire hazards and safety protocols', codeFile: 'fire_code.json', iconKey: 'fire' },
-      { name: 'Building Department', role: 'Evaluate structural changes and ADA access', codeFile: 'building_code.json', iconKey: 'building' },
-      { name: 'Business Licensing', role: 'Evaluate local business licenses', codeFile: 'business_code.json', iconKey: 'licensing' }
+      { name: 'Zoning Authority', evaluator: zoningAgent, iconKey: 'zoning' },
+      { name: 'Health Department', evaluator: healthAgent, iconKey: 'health' },
+      { name: 'Fire Marshal', evaluator: fireAgent, iconKey: 'fire' },
+      { name: 'Building Dept', evaluator: buildingAgent, iconKey: 'building' },
+      { name: 'Business Licensing', evaluator: licensingAgent, iconKey: 'licensing' }
     ];
+
     const target = allAgents.find(a => a.name === agentName);
+    if (!target) throw new Error(`Agent not found: ${agentName}`);
 
-    if (!target) throw new Error("Agent not found");
+    // 3. Re-run JUST this one agent using its proper wrapper
+    const rawResult = await target.evaluator.evaluate(intakeData);
 
-    // 3. Re-run JUST this one agent
-    const evaluateWithGemini = require('./utils/gemini');
-    const rawResult = await evaluateWithGemini(target.name, target.role, intakeData, target.codeFile);
+    // 4. Format the status exactly like the main endpoint does so the UI updates
+    const status = (rawResult.status || 'error').toLowerCase();
+    const updatedAgentResult = {
+      ...rawResult,
+      status,
+      agent: rawResult.agent || agentName,
+      iconKey: target.iconKey
+    };
 
-    // Attach the icon key so the frontend renders it correctly
-    const updatedAgentResult = { ...rawResult, iconKey: target.iconKey };
-
-    console.log(`  [✅] ${agentName} re-evaluated successfully!`);
+    console.log(`  [✅] ${agentName} re-evaluated successfully! New status: ${status}`);
     res.json(updatedAgentResult);
 
   } catch (err) {
     console.error(`  [❌] Re-evaluation failed:`, err.message);
-    res.status(500).json({ error: "Failed to resolve conflict." });
+    res.status(500).json({ error: err.message });
   }
 });
 

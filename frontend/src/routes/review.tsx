@@ -372,7 +372,7 @@ function ReviewPage() {
                         )}
 
                         {/* NEW: PROPOSE RESOLUTION UI */}
-                        {(agent.status === 'conflict' || agent.status === 'needs_info') && (
+                        {['conflict', 'needs_info', 'needs-info', 'needs_more_info'].includes(agent.status) && (
                           <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-accent)' }}>
                             <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-accent)' }}>
                               💬 Negotiate with Agent
