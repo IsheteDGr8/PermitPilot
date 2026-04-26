@@ -24,22 +24,22 @@ const questions = [
   { key: 'business_name', label: "What's the name of your business?", type: 'text', placeholder: "e.g., Maria's Tacos..." },
   {
     key: 'business_type', label: 'What type of business is this?', type: 'select', options: [
-      { value: 'food_truck', label: '🚚 Food Truck' }, { value: 'restaurant', label: '🍽️ Restaurant' }, { value: 'retail', label: '🛍️ Retail Store' }, { value: 'salon', label: '✂️ Salon / Barbershop' }
+      { value: 'food_truck', label: 'Food Truck' }, { value: 'restaurant', label: 'Restaurant' }, { value: 'retail', label: 'Retail Store' }, { value: 'salon', label: 'Salon / Barbershop' }
     ]
   },
   {
     key: 'city', label: 'Which city are you operating in?', type: 'select', options: [
-      { value: 'seattle', label: '🌲 Seattle, WA' }, { value: 'austin', label: '🎸 Austin, TX' }, { value: 'other', label: '🏙️ Other City' }
+      { value: 'seattle', label: 'Seattle, WA' }, { value: 'austin', label: 'Austin, TX' }, { value: 'other', label: 'Other City' }
     ]
   },
   {
     key: 'zone', label: 'What type of area will you operate in?', type: 'select', options: [
-      { value: 'downtown_c2', label: '🏢 Downtown Commercial' }, { value: 'residential_adj', label: '🏡 Near Residential / Parks' }, { value: 'industrial', label: '🏭 Industrial Zone' }
+      { value: 'downtown_c2', label: 'Downtown Commercial' }, { value: 'residential_adj', label: 'Near Residential / Parks' }, { value: 'industrial', label: 'Industrial Zone' }
     ]
   },
   {
     key: 'fuel_type', label: 'What is your primary cooking/operation fuel?', type: 'select', options: [
-      { value: 'propane', label: '🔥 Propane Gas' }, { value: 'electric', label: '⚡ Electric' }, { value: 'none', label: '🚫 None / NA' }
+      { value: 'propane', label: 'Propane Gas' }, { value: 'electric', label: 'Electric' }, { value: 'none', label: 'None / NA' }
     ]
   },
   {

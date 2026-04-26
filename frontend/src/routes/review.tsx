@@ -20,7 +20,8 @@ import {
   User,
   Building,
   Wand2,
-  File
+  File,
+  MessageSquare
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
@@ -238,15 +239,13 @@ function ReviewPage() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: 'var(--radius-md)',
+                  padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
                   background: result.overall_status === 'all_clear' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                  border: `1px solid ${result.overall_status === 'all_clear' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                  border: `1px solid ${result.overall_status === 'all_clear' ? 'var(--color-success)' : 'var(--color-danger)'}`,
                   color: result.overall_status === 'all_clear' ? 'var(--color-success)' : 'var(--color-danger)',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
+                  fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem'
                 }}>
-                  {result.overall_status === 'all_clear' ? '✅ All Clear' : `⚠️ ${conflictCount} Conflict${conflictCount !== 1 ? 's' : ''} Detected`}
+                  {result.overall_status === 'all_clear' ? <><CheckCircle2 size={16} /> All Clear</> : <><AlertTriangle size={16} /> {conflictCount} Conflict{conflictCount !== 1 ? 's' : ''} Detected</>}
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
                   <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.25rem' }} />
