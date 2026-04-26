@@ -100,7 +100,6 @@ function StartFlow() {
   const done = step >= total
   const current = !done ? questions[step] : null
 
-  // Route Protection: Kick out unauthenticated users immediately
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) navigate({ to: "/auth" })
@@ -122,11 +121,10 @@ function StartFlow() {
     setIsEvaluating(true)
     setError(null)
 
-    // Get the logged in user
     const { data: { user } } = await supabase.auth.getUser()
 
     const zoneMap: Record<string, { zone: string; parkDist: number }> = {
-      downtown_c2: { zone: 'Downtown (C-2)', parkDist: 45 }, // Trigger the 50ft park violation!
+      downtown_c2: { zone: 'Downtown (C-2)', parkDist: 45 },
       commercial_c1: { zone: 'Neighborhood Commercial (C-1)', parkDist: 200 },
       industrial: { zone: 'Industrial / Mixed-Use', parkDist: 500 },
       residential_adj: { zone: 'Near Residential Area', parkDist: 150 },
@@ -184,6 +182,13 @@ function StartFlow() {
     }
   }
 
+  // Handle going back a step
+  const handleBack = () => {
+    if (step > 0) {
+      setStep(step - 1)
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SiteHeader />
@@ -195,7 +200,6 @@ function StartFlow() {
             Agent Council
           </h3>
           {sidebarAgents.map((a) => {
-            // BULLETPROOF FALLBACK: If the icon doesn't exist, use Sparkles
             const Icon = (agentIcons && agentIcons[a.iconKey as keyof typeof agentIcons]) || Sparkles;
             const woke = isEvaluating || wokeAgents.has(a.name);
 
@@ -254,8 +258,9 @@ function StartFlow() {
                     <input
                       type="text"
                       placeholder={current.placeholder}
-                      defaultValue={answers[current.key] || ''}
+                      value={answers[current.key] || ''}
                       autoFocus
+                      onChange={(e) => setAnswers({ ...answers, [current.key]: e.target.value })}
                       onKeyDown={(e) => { if (e.key === 'Enter' && e.currentTarget.value.trim()) handleAnswer(e.currentTarget.value.trim()) }}
                       style={{ width: '100%', padding: '1rem 1.25rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text-primary)', fontSize: '1.1rem', outline: 'none' }}
                     />
@@ -276,6 +281,36 @@ function StartFlow() {
                     ))}
                   </div>
                 )}
+
+                {/* Back and Continue Buttons */}
+                <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <button
+                    onClick={handleBack}
+                    disabled={step === 0}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none',
+                      color: step === 0 ? 'var(--color-border)' : 'var(--color-text-secondary)',
+                      cursor: step === 0 ? 'default' : 'pointer', fontSize: '0.95rem', fontWeight: 500,
+                    }}
+                  >
+                    <ArrowLeft size={18} /> Back
+                  </button>
+
+                  {current.type === 'text' && (
+                    <button
+                      onClick={() => {
+                        const val = answers[current.key] || ''
+                        if (val.trim()) handleAnswer(val.trim())
+                      }}
+                      disabled={!answers[current.key]?.trim()}
+                      className="btn-primary"
+                      style={{ opacity: !answers[current.key]?.trim() ? 0.5 : 1 }}
+                    >
+                      Continue <ArrowRight size={18} />
+                    </button>
+                  )}
+                </div>
+
               </motion.div>
             </AnimatePresence>
           )}
