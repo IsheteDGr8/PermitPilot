@@ -5,6 +5,7 @@ import { ArrowRight, ArrowLeft, Sparkles, Plane } from 'lucide-react'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
 import { agentIcons } from '@/components/agent-icons'
 import { supabase } from '@/lib/supabase'
+import { evaluatePermit } from '@/lib/api'
 
 export const Route = createFileRoute('/start')({
   component: StartFlow,
@@ -100,11 +101,17 @@ function StartFlow() {
   const done = step >= total
   const current = !done ? questions[step] : null
 
+  // STEP 3 FIX: This is the Auth Guard. It checks if a valid session exists
+  // as soon as the page loads. If not, it safely kicks them to the login screen.
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) navigate({ to: "/auth" })
-    })
-  }, [navigate])
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate({ to: '/auth' });
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const wokeAgents = useMemo(() => {
     const woke = new Set<string>()
@@ -121,6 +128,7 @@ function StartFlow() {
     setIsEvaluating(true)
     setError(null)
 
+    // 1. Get the current logged-in user
     const { data: { user } } = await supabase.auth.getUser()
 
     const zoneMap: Record<string, { zone: string; parkDist: number }> = {
@@ -135,7 +143,6 @@ function StartFlow() {
 
     const payload = {
       application_id: `app-${Math.floor(Math.random() * 10000)}`,
-      user_id: user?.id,
       project_type: finalAnswers.business_type || "retail",
       business_info: {
         business_name: finalAnswers.business_name || "Demo Business",
@@ -148,17 +155,16 @@ function StartFlow() {
       health_and_safety: {
         food_handling_tier: isFoodBiz ? "open_preparation" : "none",
         commissary_kitchen_access: true
+      },
+      operations: {
+        expected_daily_customers: 50,
+        serves_alcohol: false,
+        music_or_entertainment: false
       }
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/evaluate-permit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
+      const data = await evaluatePermit(payload, user?.id);
 
       localStorage.setItem("permitResult", JSON.stringify(data));
       localStorage.setItem("permitIntake", JSON.stringify(payload));
