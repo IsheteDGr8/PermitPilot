@@ -1,166 +1,68 @@
-import { Link, useNavigate } from '@tanstack/react-router'
-import { Plane } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Compass, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export function SiteHeader() {
-  const navigate = useNavigate()
-  const [session, setSession] = useState<any>(null)
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
 
+  // Listen for login/logout events automatically
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => authListener.subscription.unsubscribe();
+  }, []);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    navigate({ to: '/auth' })
-  }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  };
 
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 30,
-        borderBottom: '1px solid var(--color-border)',
-        background: 'rgba(10, 10, 15, 0.85)',
-        backdropFilter: 'blur(16px)',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 var(--spacing-page)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '64px',
-        }}
-      >
-        <Link
-          to="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            textDecoration: 'none',
-            color: 'var(--color-text-primary)',
-          }}
-        >
-          <Plane size={24} style={{ color: 'var(--color-accent)' }} />
-          <span style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-            Permit<span style={{ color: 'var(--color-accent)' }}>Pilot</span>
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-6">
+        <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <Compass className="h-4 w-4" />
           </span>
+          <span className="font-medium tracking-wide">PermitPilot</span>
         </Link>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <Link
-            to="/admin"
-            style={{
-              color: 'var(--color-text-secondary)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
-          >
-            Admin
-          </Link>
-          <Link
-            to="/start"
-            style={{
-              color: 'var(--color-text-secondary)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
-          >
-            Start Permit
-          </Link>
-          {session ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              <Link
-                to="/portal"
-                style={{
-                  color: 'var(--color-accent)',
-                  textDecoration: 'none',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  transition: 'color 0.2s',
-                }}
-              >
-                My Portal
-              </Link>
-              <button
-                onClick={handleSignOut}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-text-secondary)',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-danger)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
-              >
-                Sign Out
+        <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+          {user ? (
+            <>
+              <Link to="/start" className="text-text-secondary transition-colors hover:text-foreground">Start New Permit</Link>
+              <Link to="/portal" className="text-text-secondary transition-colors hover:text-foreground">My Portal</Link>
+              <button onClick={handleLogout} className="flex items-center gap-1.5 text-text-secondary transition-colors hover:text-red-400">
+                <LogOut className="h-4 w-4" /> Logout
               </button>
-            </div>
+            </>
           ) : (
-            <Link
-              to="/auth"
-              style={{
-                color: 'var(--color-accent)',
-                textDecoration: 'none',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                transition: 'color 0.2s',
-              }}
-            >
-              Sign In
-            </Link>
+            <Link to="/auth" className="rounded-full bg-primary px-4 py-1.5 text-primary-foreground transition-transform hover:scale-105">Login / Register</Link>
           )}
         </nav>
       </div>
     </header>
-  )
+  );
 }
 
 export function SiteFooter() {
   return (
-    <footer
-      style={{
-        borderTop: '1px solid var(--color-border)',
-        padding: '2rem var(--spacing-page)',
-        textAlign: 'center',
-        color: 'var(--color-text-muted)',
-        fontSize: '0.85rem',
-      }}
-    >
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <Plane size={16} style={{ color: 'var(--color-accent)' }} />
-          <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>PermitPilot</span>
+    <footer className="border-t border-border/40 bg-surface/50 py-12">
+      <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-6 px-6 sm:flex-row">
+        <div className="flex items-center gap-2.5 opacity-80">
+          <span className="grid h-6 w-6 place-items-center rounded bg-foreground text-background">
+            <Compass className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-sm font-medium">PermitPilot</span>
         </div>
-        <p>From 14 Weeks to 14 Minutes · AI-Powered Civic Permit Navigator</p>
-        <p style={{ marginTop: '0.25rem' }}>Built with Google Gemini · {new Date().getFullYear()}</p>
+        <p className="text-xs text-text-secondary">
+          A multi-agent demonstration. Not for actual municipal use.
+        </p>
       </div>
     </footer>
-  )
+  );
 }

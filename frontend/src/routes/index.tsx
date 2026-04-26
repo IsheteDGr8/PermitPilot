@@ -153,7 +153,7 @@ function LandingPage() {
                 lineHeight: 1.7,
               }}
             >
-              The AI-powered civic permit navigator that replaces five confusing government websites 
+              The AI-powered civic permit navigator that replaces five confusing government websites
               with one conversational interface. Tell us what you want to open and where — we handle the rest.
             </p>
 
