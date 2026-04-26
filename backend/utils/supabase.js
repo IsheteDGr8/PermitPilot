@@ -113,4 +113,4 @@ async function deleteApplication(applicationId, userId) {
   }
 }
 
-module.exports = { saveApplication, getApplications, deleteApplication };
+module.exports = { saveApplication, getApplications, deleteApplication, getClient };
