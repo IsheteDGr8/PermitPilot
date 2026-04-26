@@ -146,20 +146,19 @@ function StartFlow() {
       project_type: finalAnswers.business_type || "retail",
       business_info: {
         business_name: finalAnswers.business_name || "Demo Business",
+        business_type: finalAnswers.business_type || "retail", // Added to match types.ts
         employees: finalAnswers.employees === 'solo' ? 1 : 5
       },
       location_details: {
         operating_zone: loc.zone,
         proximity_to_park_feet: isFoodBiz ? loc.parkDist : 100
       },
-      health_and_safety: {
-        food_handling_tier: isFoodBiz ? "open_preparation" : "none",
-        commissary_kitchen_access: true
-      },
       operations: {
-        expected_daily_customers: 50,
+        operating_hours: "9:00 AM - 5:00 PM", // Added to match types.ts
+        fuel_type: finalAnswers.fuel_type || "none", // Matches the fuel_type question
+        equipment: [], // Added to match types.ts
         serves_alcohol: false,
-        music_or_entertainment: false
+        outdoor_seating: false // Added to match types.ts
       }
     }
 
