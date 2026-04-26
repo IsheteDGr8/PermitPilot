@@ -49,8 +49,9 @@ function ReviewPage() {
     })
   }
 
+  // --- INTERACTIVE CHECKLIST LOGIC ---
   const handleToggleChecklist = async (index: number) => {
-    if (!result) return;
+    if (!result || !result.checklist) return;
 
     // Create a copy of the checklist and flip the status
     const newChecklist = [...result.checklist];
@@ -170,7 +171,7 @@ function ReviewPage() {
                   padding: '1.25rem 1.5rem',
                   marginBottom: '0.75rem',
                   borderColor: 'rgba(239, 68, 68, 0.3)',
-                  background: 'var(--color-danger-bg)', // Dynamic based on light/dark mode!
+                  background: 'var(--color-danger-bg)', // Fixed for light mode
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -215,7 +216,7 @@ function ReviewPage() {
                 className="glass-card"
                 style={{ overflow: 'hidden' }}
               >
-                {/* Agent Header (clickable) */}
+                {/* Agent Header */}
                 <button
                   onClick={() => toggleAgent(i)}
                   style={{
@@ -388,7 +389,7 @@ function ReviewPage() {
           })}
         </div>
 
-        {/* Checklist Preview */}
+        {/* INTERACTIVE CHECKLIST PREVIEW */}
         {result.checklist?.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -437,7 +438,8 @@ function ReviewPage() {
                         fontSize: '0.9rem',
                         fontWeight: 500,
                         textDecoration: isDone ? 'line-through' : 'none',
-                        color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)'
+                        color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                        transition: 'all 0.2s ease'
                       }}>
                         {item.action}
                       </p>
@@ -448,7 +450,8 @@ function ReviewPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                )
+              })}
 
               {/* Total cost */}
               <div style={{

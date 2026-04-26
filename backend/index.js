@@ -208,30 +208,20 @@ app.delete('/api/applications/:id', async (req, res) => {
   }
 });
 
-// Add this right below app.delete('/api/applications/:id', ...)
 app.patch('/api/applications/:id', async (req, res) => {
-  const appId = req.params.id;
-  const updates = req.body;
-
   try {
-    const client = require('./utils/supabase').getClient(); // Use your existing helper
-    if (!client) throw new Error("Supabase client unavailable");
+    const client = require('./utils/supabase').getClient();
+    if (!client) throw new Error("Supabase unavailable");
 
-    // We only want to update specific columns to prevent overwriting everything
     const { data, error } = await client
       .from('applications')
-      .update({
-        checklist: updates.checklist,
-        // Add other fields here if you eventually want users to edit their intake data
-      })
-      .eq('application_id', appId);
+      .update({ checklist: req.body.checklist })
+      .eq('application_id', req.params.id);
 
     if (error) throw error;
-    res.json({ success: true, message: "Application updated" });
-
-  } catch (error) {
-    console.error(`[❌] Failed to update application ${appId}:`, error.message);
-    res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
