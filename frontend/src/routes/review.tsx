@@ -13,11 +13,13 @@ import {
   Lightbulb,
   Plane,
   ArrowLeft,
+  Check, // Added Check icon
 } from 'lucide-react'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
 import { StatusBadge } from '@/components/status-badge'
 import { getAgentIcon, getAgentColor } from '@/components/agent-icons'
 import type { EvaluationResponse, IntakeData } from '@/lib/types'
+import { updateApplication } from '@/lib/api' // Added API import
 
 export const Route = createFileRoute('/review')({
   component: ReviewPage,
@@ -45,6 +47,27 @@ function ReviewPage() {
       next.has(index) ? next.delete(index) : next.add(index)
       return next
     })
+  }
+
+  const handleToggleChecklist = async (index: number) => {
+    if (!result) return;
+
+    // Create a copy of the checklist and flip the status
+    const newChecklist = [...result.checklist];
+    const isCompleted = newChecklist[index].status === 'completed';
+    newChecklist[index].status = isCompleted ? 'pending' : 'completed';
+
+    // 1. Optimistic UI Update (updates the screen instantly)
+    const updatedResult = { ...result, checklist: newChecklist };
+    setResult(updatedResult);
+    localStorage.setItem('permitResult', JSON.stringify(updatedResult));
+
+    // 2. Background Database Save
+    try {
+      await updateApplication(result.application_id, { checklist: newChecklist });
+    } catch (error) {
+      console.error("Failed to save checklist progress:", error);
+    }
   }
 
   if (!result) {
@@ -147,7 +170,7 @@ function ReviewPage() {
                   padding: '1.25rem 1.5rem',
                   marginBottom: '0.75rem',
                   borderColor: 'rgba(239, 68, 68, 0.3)',
-                  background: 'linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(18,18,26,0.8) 100%)',
+                  background: 'var(--color-danger-bg)', // Dynamic based on light/dark mode!
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -376,44 +399,56 @@ function ReviewPage() {
               📋 Dependency-Ordered Checklist
             </h2>
             <div className="glass-card" style={{ padding: '1.25rem' }}>
-              {result.checklist.map((item, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.75rem',
-                    padding: '0.75rem 0',
-                    borderBottom: i < result.checklist.length - 1 ? '1px solid var(--color-border-subtle)' : 'none',
-                  }}
-                >
+              {result.checklist.map((item, i) => {
+                const isDone = item.status === 'completed';
+                return (
                   <div
+                    key={i}
                     style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      display: 'grid',
-                      placeItems: 'center',
-                      background: 'var(--color-accent-glow)',
-                      border: '1px solid rgba(124,92,252,0.3)',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: 'var(--color-accent)',
-                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.75rem',
+                      padding: '0.75rem 0',
+                      borderBottom: i < result.checklist.length - 1 ? '1px solid var(--color-border-subtle)' : 'none',
+                      opacity: isDone ? 0.6 : 1, // Dims the item when done
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    {item.step}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 500 }}>{item.action}</p>
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
-                      <span>{item.source_agent}</span>
-                      {item.estimated_cost != null && <span>💰 ${item.estimated_cost.toLocaleString()}</span>}
-                      {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
+                    <button
+                      onClick={() => handleToggleChecklist(i)}
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        display: 'grid',
+                        placeItems: 'center',
+                        background: isDone ? 'var(--color-success)' : 'var(--color-accent-glow)',
+                        border: isDone ? 'none' : '1px solid rgba(124,92,252,0.3)',
+                        color: isDone ? 'white' : 'var(--color-accent)',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {isDone ? <Check size={16} strokeWidth={3} /> : <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{item.step}</span>}
+                    </button>
+                    <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleToggleChecklist(i)}>
+                      <p style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 500,
+                        textDecoration: isDone ? 'line-through' : 'none',
+                        color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)'
+                      }}>
+                        {item.action}
+                      </p>
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
+                        <span>{item.source_agent}</span>
+                        {item.estimated_cost != null && <span>💰 ${item.estimated_cost.toLocaleString()}</span>}
+                        {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
               {/* Total cost */}
               <div style={{

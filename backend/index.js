@@ -1,6 +1,8 @@
 require('dotenv').config({ path: '../.env.local' });
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 // Import all domain agents
 const zoningAgent = require('./agents/zoning');
@@ -49,6 +51,20 @@ app.post('/api/evaluate-permit', async (req, res) => {
 
   try {
     console.log('\n[⚡] Dispatching to 5 domain agents (staggered to avoid rate limits)...');
+
+    const city = intakeData.location_details?.city?.toLowerCase();
+    if (city) {
+      try {
+        const cityFilePath = path.join(__dirname, 'data', 'cities', `${city}.json`);
+        if (fs.existsSync(cityFilePath)) {
+          const localLaws = JSON.parse(fs.readFileSync(cityFilePath, 'utf8'));
+          intakeData.local_municipal_codes = localLaws; // The AI will automatically read this!
+          console.log(`[📍] Injected local municipal codes for: ${city}`);
+        }
+      } catch (err) {
+        console.warn(`[⚠️] Could not load local laws for ${city}`);
+      }
+    }
 
     const agentDefs = [
       { name: 'Zoning Authority', evaluator: zoningAgent },
@@ -188,6 +204,33 @@ app.delete('/api/applications/:id', async (req, res) => {
       res.status(400).json({ success: false, error: 'Failed to delete application' });
     }
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add this right below app.delete('/api/applications/:id', ...)
+app.patch('/api/applications/:id', async (req, res) => {
+  const appId = req.params.id;
+  const updates = req.body;
+
+  try {
+    const client = require('./utils/supabase').getClient(); // Use your existing helper
+    if (!client) throw new Error("Supabase client unavailable");
+
+    // We only want to update specific columns to prevent overwriting everything
+    const { data, error } = await client
+      .from('applications')
+      .update({
+        checklist: updates.checklist,
+        // Add other fields here if you eventually want users to edit their intake data
+      })
+      .eq('application_id', appId);
+
+    if (error) throw error;
+    res.json({ success: true, message: "Application updated" });
+
+  } catch (error) {
+    console.error(`[❌] Failed to update application ${appId}:`, error.message);
     res.status(500).json({ error: error.message });
   }
 });

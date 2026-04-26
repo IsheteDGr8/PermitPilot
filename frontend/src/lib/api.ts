@@ -51,3 +51,20 @@ export async function deleteApplication(appId: string, userId: string) {
   if (!res.ok) throw new Error('Failed to delete application');
   return res.json();
 }
+
+/**
+ * Update an existing application (e.g., checking off a checklist item).
+ */
+export async function updateApplication(appId: string, updates: Partial<EvaluationResponse>) {
+  // Since we bypassed RLS, we can send a PUT/PATCH request to a new backend endpoint
+  const res = await fetch(`${API_BASE}/applications/${appId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to update application: ${res.status}`);
+  }
+  return res.json();
+}

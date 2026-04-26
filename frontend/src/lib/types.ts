@@ -81,6 +81,7 @@ export interface IntakeData {
     operating_zone: string;
     proximity_to_park_feet: number;
     address?: string;
+    city?: string; // Add this line
   };
   operations: {
     operating_hours: string;

@@ -27,6 +27,19 @@ const questions: Question[] = [
     placeholder: "e.g., Maria's Tacos, Urban Cuts Salon...",
     type: 'text',
   },
+  // ADD THIS NEW QUESTION
+  {
+    key: 'city',
+    label: 'Which city are you operating in?',
+    placeholder: 'Select your city',
+    type: 'select',
+    options: [
+      { value: 'seattle', label: '🌲 Seattle, WA' },
+      { value: 'austin', label: '🎸 Austin, TX' },
+      { value: 'other', label: '🏙️ Other City (General Rules)' },
+    ],
+    wakesAgent: 'Zoning Authority',
+  },
   {
     key: 'business_type',
     label: 'What type of business are you opening?',
@@ -150,6 +163,7 @@ function StartFlow() {
         employees: finalAnswers.employees === 'solo' ? 1 : 5
       },
       location_details: {
+        city: finalAnswers.city || 'other',
         operating_zone: loc.zone,
         proximity_to_park_feet: isFoodBiz ? loc.parkDist : 100
       },
