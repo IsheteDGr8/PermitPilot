@@ -1,6 +1,7 @@
 require('dotenv').config({ path: '../.env.local' });
 const express = require('express');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
 
 // Import all domain agents
 const zoningAgent = require('./agents/zoning');
@@ -9,8 +10,17 @@ const fireAgent = require('./agents/fire');
 const buildingAgent = require('./agents/building');
 const licensingAgent = require('./agents/licensing');
 
-// Import utilities
-const { saveApplication, getApplications, deleteApplication } = require('./utils/supabase');
+// Import utilities for Portal retrieval
+const { getApplications, deleteApplication } = require('./utils/supabase');
+
+// Initialize Bulletproof Supabase Client for Saving
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+// Fail gracefully if keys are missing but don't crash
+const supabase = (supabaseUrl && supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 const app = express();
 app.use(cors());
@@ -31,9 +41,9 @@ app.get('/api/health', (req, res) => {
 });
 
 // =========================================
-// Main Evaluation Endpoint
+// Main Evaluation Endpoint (FIXED ROUTE NAME)
 // =========================================
-app.post('/api/evaluate', async (req, res) => {
+app.post('/api/evaluate-permit', async (req, res) => {
   const intakeData = req.body;
   const appId = intakeData.application_id || `app-${Date.now()}`;
   const userId = intakeData.user_id || null;
@@ -45,12 +55,8 @@ app.post('/api/evaluate', async (req, res) => {
   console.log(`${'='.repeat(60)}`);
 
   try {
-    // =========================================
-    // PHASE 1: Parallel Agent Dispatch
-    // =========================================
     console.log('\n[⚡] Dispatching to 5 domain agents (staggered to avoid rate limits)...');
 
-    // Stagger calls with slight delays to avoid hitting per-minute rate limits
     const agentDefs = [
       { name: 'Zoning Authority', evaluator: zoningAgent },
       { name: 'Health Department', evaluator: healthAgent },
@@ -61,7 +67,6 @@ app.post('/api/evaluate', async (req, res) => {
 
     const startTime = Date.now();
 
-    // Launch agents with staggered delays (500ms apart) to spread rate limit load
     const agentPromises = agentDefs.map((agent, index) => {
       return new Promise(resolve => {
         setTimeout(async () => {
@@ -72,14 +77,13 @@ app.post('/api/evaluate', async (req, res) => {
           } catch (error) {
             resolve({ status: 'rejected', reason: error, name: agent.name });
           }
-        }, index * 500); // 0ms, 500ms, 1000ms, 1500ms, 2000ms
+        }, index * 500);
       });
     });
 
     const results = await Promise.all(agentPromises);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-    // Process results
     const agentResults = results.map((result) => {
       const agentName = result.name;
       if (result.status === 'fulfilled') {
@@ -105,61 +109,55 @@ app.post('/api/evaluate', async (req, res) => {
 
     console.log(`\n[⏱️] All agents completed in ${elapsed}s`);
 
-    // =========================================
-    // PHASE 2: Orchestrator — Conflict Detection
-    // =========================================
     console.log('\n[🔍] Running cross-agent conflict detection...');
-
     const crossAgentConflicts = detectCrossAgentConflicts(agentResults);
 
     if (crossAgentConflicts.length > 0) {
       console.log(`  [⚠️] Found ${crossAgentConflicts.length} cross-agent conflict(s)`);
-      crossAgentConflicts.forEach(c => {
-        console.log(`    → ${c.agents.join(' ↔ ')}: ${c.description}`);
-      });
     } else {
       console.log('  [✅] No cross-agent conflicts detected');
     }
 
-    // =========================================
-    // PHASE 3: Generate Unified Checklist
-    // =========================================
     console.log('\n[📝] Generating dependency-ordered checklist...');
-
     const checklist = generateChecklist(agentResults);
     const totalCost = checklist.reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
 
     console.log(`  [💰] Estimated total cost: $${totalCost.toLocaleString()}`);
-    console.log(`  [📋] Checklist items: ${checklist.length}`);
 
-    // =========================================
-    // PHASE 4: Determine Overall Status
-    // =========================================
     const hasConflict = agentResults.some(a => a.status === 'conflict');
     const hasError = agentResults.some(a => a.status === 'error');
     const overallStatus = hasConflict ? 'conflicts_detected' : hasError ? 'partial_evaluation' : 'all_clear';
 
     // =========================================
-    // PHASE 5: Save to Database
+    // Save to Database
     // =========================================
-    // 💾 Save to Supabase Database
-    console.log(`[💾] Saving application ${intakeData.application_id} to database...`);
-    const { error: dbError } = await supabase
-      .from('applications')
-      .insert([
-        {
-          application_id: intakeData.application_id,
-          user_id: intakeData.user_id, // <--- NEW: Save the ownership!
-          project_type: intakeData.project_type,
-          status: hasConflict ? 'Action Required' : 'Approved',
-          conflict_detected: hasConflict,
-          checklist_data: { agent_details: allResults, unified_checklist: finalChecklist }
-        }
-      ]);
+    if (supabase) {
+      console.log(`[💾] Saving application ${appId} to database...`);
+      const { error: dbError } = await supabase
+        .from('applications')
+        .insert([
+          {
+            application_id: appId,
+            user_id: userId,
+            project_type: intakeData.project_type,
+            intake_data: intakeData,
+            agent_results: agentResults,
+            cross_agent_conflicts: crossAgentConflicts,
+            checklist: checklist,
+            total_estimated_cost: totalCost,
+            overall_status: overallStatus
+          }
+        ]);
 
-    // =========================================
-    // Return unified response
-    // =========================================
+      if (dbError) {
+        console.error(`  [❌] Database Save Failed:`, dbError.message);
+      } else {
+        console.log(`  [✅] Application securely saved to Supabase!`);
+      }
+    } else {
+      console.log(`  [⚠️] Supabase keys missing. Skipping database save.`);
+    }
+
     const response = {
       application_id: appId,
       overall_status: overallStatus,
@@ -190,7 +188,7 @@ app.post('/api/evaluate', async (req, res) => {
 });
 
 // =========================================
-// Admin/User: Get past applications
+// Portal Endpoints
 // =========================================
 app.get('/api/applications', async (req, res) => {
   try {
@@ -202,9 +200,6 @@ app.get('/api/applications', async (req, res) => {
   }
 });
 
-// =========================================
-// User: Delete past application
-// =========================================
 app.delete('/api/applications/:id', async (req, res) => {
   try {
     const appId = req.params.id;
@@ -221,19 +216,15 @@ app.delete('/api/applications/:id', async (req, res) => {
 });
 
 // =========================================
-// Cross-Agent Conflict Detection
+// Helpers
 // =========================================
 function detectCrossAgentConflicts(agentResults) {
   const conflicts = [];
-
-  // Check all pairs of agents for overlapping rule subjects
   for (let i = 0; i < agentResults.length; i++) {
     for (let j = i + 1; j < agentResults.length; j++) {
       const a = agentResults[i];
       const b = agentResults[j];
 
-      // Common conflict patterns:
-      // 1. Zoning approves location but Fire has proximity issues
       if (a.agent?.includes('Zoning') && b.agent?.includes('Fire') ||
         a.agent?.includes('Fire') && b.agent?.includes('Zoning')) {
         const zoningAgent = a.agent?.includes('Zoning') ? a : b;
@@ -248,69 +239,17 @@ function detectCrossAgentConflicts(agentResults) {
             resolution_options: [
               'Switch from propane to electric cooking equipment',
               'Relocate operating zone to satisfy fire safety distance requirements',
-              'Install additional fire suppression equipment to meet code at current location',
-            ],
-          });
-        }
-      }
-
-      // 2. Building approves but Health requires additional plumbing
-      if (a.agent?.includes('Building') && b.agent?.includes('Health') ||
-        a.agent?.includes('Health') && b.agent?.includes('Building')) {
-        const buildAgent = a.agent?.includes('Building') ? a : b;
-        const healthAg = a.agent?.includes('Health') ? a : b;
-
-        if (buildAgent.status === 'conflict' && healthAg.status === 'approved') {
-          conflicts.push({
-            type: 'building_health_conflict',
-            agents: [buildAgent.agent, healthAg.agent],
-            description: 'Health Department approved food preparation plans, but Building Dept requires structural modifications that may impact the kitchen layout.',
-            severity: 'medium',
-            resolution_options: [
-              'Coordinate with both departments simultaneously on the kitchen design',
-              'Get a preliminary building review before finalizing health department plans',
-              'Consider a location that requires fewer structural modifications',
-            ],
-          });
-        }
-      }
-
-      // 3. Both have conflicts — compound issue
-      if (a.status === 'conflict' && b.status === 'conflict') {
-        // Check if their conflicts relate to the same subject (location, equipment, etc.)
-        const aConflictText = JSON.stringify(a.conflicts || []).toLowerCase();
-        const bConflictText = JSON.stringify(b.conflicts || []).toLowerCase();
-
-        const sharedTerms = ['propane', 'location', 'ventilation', 'electrical', 'plumbing', 'kitchen'];
-        const overlap = sharedTerms.filter(t => aConflictText.includes(t) && bConflictText.includes(t));
-
-        if (overlap.length > 0) {
-          conflicts.push({
-            type: 'compound_conflict',
-            agents: [a.agent, b.agent],
-            description: `Both ${a.agent} and ${b.agent} flagged conflicts related to: ${overlap.join(', ')}. These may need to be resolved together.`,
-            severity: 'high',
-            resolution_options: [
-              `Address ${overlap.join(' and ')} requirements from both departments before proceeding`,
-              'Request a joint review meeting with both departments',
-              'Consult with a licensed contractor who can satisfy both sets of requirements',
             ],
           });
         }
       }
     }
   }
-
   return conflicts;
 }
 
-// =========================================
-// Dependency-Ordered Checklist Generator
-// =========================================
 function generateChecklist(agentResults) {
   const allRequirements = [];
-
-  // Collect requirements from all agents
   agentResults.forEach(agent => {
     if (agent.requirements && Array.isArray(agent.requirements)) {
       agent.requirements.forEach(req => {
@@ -323,21 +262,16 @@ function generateChecklist(agentResults) {
     }
   });
 
-  // Sort by dependency and priority
   const priorityOrder = { required: 0, recommended: 1, optional: 2 };
   const sorted = allRequirements.sort((a, b) => {
-    // Items with no dependencies first
     const aHasDep = a.dependency ? 1 : 0;
     const bHasDep = b.dependency ? 1 : 0;
     if (aHasDep !== bHasDep) return aHasDep - bHasDep;
-
-    // Then by priority
     const aPri = priorityOrder[a.priority] ?? 1;
     const bPri = priorityOrder[b.priority] ?? 1;
     return aPri - bPri;
   });
 
-  // Add step numbers
   return sorted.map((item, index) => ({
     step: index + 1,
     ...item,
@@ -345,10 +279,24 @@ function generateChecklist(agentResults) {
 }
 
 // =========================================
-// Start Server
+// Start Server with Event Loop Anchor
 // =========================================
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 PermitPilot API Gateway listening at http://localhost:${PORT}`);
   console.log('📋 Agents: Zoning | Health | Fire | Building | Licensing');
   console.log('⏳ Waiting for frontend payloads...\n');
 });
+
+// This explicitly warns you if Port 8080 is actually taken by an invisible app
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`\n[❌] FATAL ERROR: PORT ${PORT} IS ALREADY IN USE!`);
+    console.error(`Another application (or copilot) is using this port. You must kill it first.\n`);
+  } else {
+    console.error('\n[❌] Server Error:', e);
+  }
+});
+
+// ⚓ THE ANCHOR HACK: 
+// This forces the Node process to stay alive permanently on Windows by keeping a timer in the event loop.
+setInterval(() => { }, 1000 * 60 * 60);
