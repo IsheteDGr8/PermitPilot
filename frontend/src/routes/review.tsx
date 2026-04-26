@@ -19,7 +19,8 @@ import {
   X,
   User,
   Building,
-  Wand2
+  Wand2,
+  File
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { SiteHeader, SiteFooter } from '@/components/site-chrome'
@@ -160,6 +161,30 @@ function ReviewPage() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `Draft_${activeDoc?.action?.replace(/\s+/g, '_') || 'Form'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setDocModalOpen(false);
+  }
+
+  const handleDownloadEmptyForm = () => {
+    const content = `MUNICIPAL PERMIT BLANK FORM\nForm: ${activeDoc?.action}\n\n` +
+      `-- APPLICANT INFO --\n` +
+      `Owner Name: ________________________________\n\n` +
+      `-- BUSINESS INFO --\n` +
+      `Business Name: ________________________________\n` +
+      `Operating Zone: ________________________________\n\n` +
+      `-- ADDITIONAL FIELDS --\n` +
+      `Tax Classification: ________________________________\n` +
+      `Estimated Start Date: ________________________________\n\n` +
+      `* Please fill out and sign before submitting to the municipality. *`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Blank_${activeDoc?.action?.replace(/\s+/g, '_') || 'Form'}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -586,19 +611,20 @@ function ReviewPage() {
                 )
               })}
 
-              {/* Total cost */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: '1rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid var(--color-border)',
-                fontWeight: 700,
-              }}>
-                <span>Total Estimated Cost</span>
-                <span style={{ color: 'var(--color-warning)', fontSize: '1.1rem' }}>
-                  ${result.total_estimated_cost?.toLocaleString() || '0'}
-                </span>
+              {/* Totals */}
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginBottom: '0.5rem' }}>
+                  <span>Maximum Estimated Cost</span>
+                  <span style={{ color: 'var(--color-warning)', fontSize: '1.1rem' }}>
+                    ${result.total_estimated_cost?.toLocaleString() || '0'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+                  <span>Maximum Time of Issuance</span>
+                  <span style={{ color: 'var(--color-accent)', fontSize: '1rem' }}>
+                    ~{Math.max(2, Math.ceil(((result.total_estimated_cost || 0) / 1000) * 0.5))} weeks
+                  </span>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -675,10 +701,15 @@ function ReviewPage() {
                 </div>
 
                 {/* Footer Actions */}
-                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '1rem' }}>
-                  <button onClick={() => setDocModalOpen(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => setDocModalOpen(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
+                    Cancel
+                  </button>
+                  <button onClick={handleDownloadEmptyForm} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
+                    <File size={16} /> Blank Form
+                  </button>
                   <button onClick={handleDownloadForm} disabled={docProgress < 100} className="btn-primary" style={{ flex: 2, justifyContent: 'center', opacity: docProgress < 100 ? 0.5 : 1 }}>
-                    <Download size={16} /> Review & Sign (Download Draft)
+                    <Download size={16} /> Auto-Filled Draft
                   </button>
                 </div>
               </motion.div>

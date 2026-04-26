@@ -269,6 +269,12 @@ function UserPortal() {
                               : `${pendingChecklistCount} remaining task${pendingChecklistCount !== 1 ? 's' : ''}`}
                           </span>
                         )}
+                        {totalChecklistCount > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <Clock size={13} style={{ color: 'var(--color-info)' }} />
+                            ~{Math.max(2, Math.ceil((estimatedCost / 1000) * 0.5))} wks
+                          </span>
+                        )}
                       </div>
                     </div>
 

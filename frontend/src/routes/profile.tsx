@@ -50,6 +50,20 @@ function ProfilePage() {
     setLoading(false)
   }
 
+  // NEW: Phone formatter
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/\D/g, '').substring(0, 10);
+    let formatted = input;
+    if (input.length > 6) {
+      formatted = `(${input.slice(0, 3)}) ${input.slice(3, 6)}-${input.slice(6)}`;
+    } else if (input.length > 3) {
+      formatted = `(${input.slice(0, 3)}) ${input.slice(3)}`;
+    } else if (input.length > 0) {
+      formatted = `(${input}`;
+    }
+    setFormData({ ...formData, phone: formatted });
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SiteHeader />
@@ -79,7 +93,13 @@ function ProfilePage() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                   <Phone size={14} /> Phone Number
                 </label>
-                <input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text-primary)' }} placeholder="(555) 123-4567" />
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text-primary)' }}
+                  placeholder="(555) 123-4567"
+                />
               </div>
             </div>
 

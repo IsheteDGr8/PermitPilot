@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Compass, LogOut, Sun, Moon } from "lucide-react";
+import { Compass, LogOut, Sun, Moon, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
