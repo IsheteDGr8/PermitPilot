@@ -111,6 +111,7 @@ function ReviewPage() {
                   {intake?.business_info?.business_name || 'Business Application'}
                 </h1>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
+                  {intake?.location_details?.city && intake.location_details.city !== 'other' ? `${intake.location_details.city.charAt(0).toUpperCase() + intake.location_details.city.slice(1)} · ` : ''}
                   {intake?.project_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} · {intake?.location_details?.operating_zone || 'Unknown Location'}
                 </p>
               </div>

@@ -185,8 +185,9 @@ function UserPortal() {
             {applications.map((app, i) => {
               const displayStatus = getDisplayStatus(app)
               const StatusIcon = displayStatus.icon
-              const checklistCount = app.checklist?.length || 0
-              const estimatedCost = app.total_estimated_cost || 0
+              const totalChecklistCount = app.checklist?.length || 0;
+              const pendingChecklistCount = app.checklist?.filter((item: any) => item.status !== 'completed').length || 0;
+              const estimatedCost = app.total_estimated_cost || 0;
 
               return (
                 <motion.div
@@ -260,10 +261,12 @@ function UserPortal() {
                             Est. ${estimatedCost.toLocaleString()}
                           </span>
                         )}
-                        {checklistCount > 0 && (
+                        {totalChecklistCount > 0 && (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <ListChecks size={13} style={{ color: 'var(--color-info)' }} />
-                            {checklistCount} checklist items
+                            <ListChecks size={13} style={{ color: pendingChecklistCount === 0 ? 'var(--color-success)' : 'var(--color-info)' }} />
+                            {pendingChecklistCount === 0
+                              ? 'All tasks complete 🎉'
+                              : `${pendingChecklistCount} remaining task${pendingChecklistCount !== 1 ? 's' : ''}`}
                           </span>
                         )}
                       </div>

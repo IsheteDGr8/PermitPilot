@@ -209,6 +209,7 @@ app.delete('/api/applications/:id', async (req, res) => {
 });
 
 app.patch('/api/applications/:id', async (req, res) => {
+  console.log(`\n[💾] Saving checklist updates for application: ${req.params.id}`);
   try {
     const client = require('./utils/supabase').getClient();
     if (!client) throw new Error("Supabase unavailable");
@@ -219,8 +220,10 @@ app.patch('/api/applications/:id', async (req, res) => {
       .eq('application_id', req.params.id);
 
     if (error) throw error;
+    console.log(`  [✅] Checklist successfully saved to DB!`);
     res.json({ success: true });
   } catch (err) {
+    console.error(`  [❌] Failed to save checklist:`, err.message);
     res.status(500).json({ error: err.message });
   }
 });
