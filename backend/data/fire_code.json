@@ -1,0 +1,70 @@
+{
+  "agency": "Fire Marshal",
+  "jurisdiction": "Seattle Fire Department (Model)",
+  "rules": [
+    {
+      "id": "FM-101",
+      "title": "Propane Tank Mounting",
+      "description": "Propane (LPG) tanks must be securely mounted to the exterior of the vehicle or in a vented compartment with 2+ air vents. Maximum 2 tanks, 100 lbs each.",
+      "citation": "SFC 6103.2.1.3",
+      "applies_to": ["food_truck"],
+      "severity": "violation"
+    },
+    {
+      "id": "FM-102",
+      "title": "Park Proximity — Propane",
+      "description": "Propane-fueled cooking equipment shall not be operated within 50 feet of a public park, playground, or outdoor assembly area.",
+      "citation": "SFC 6103.2.1.6",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "FM-103",
+      "title": "Fire Suppression Hood",
+      "description": "Any cooking operation that produces grease-laden vapors (frying, grilling) must have a UL-300 listed automatic fire suppression system installed above the cooking surface.",
+      "citation": "SFC 904.12.1",
+      "applies_to": ["food_truck", "restaurant", "bakery"],
+      "severity": "violation"
+    },
+    {
+      "id": "FM-104",
+      "title": "Fire Extinguisher Requirement",
+      "description": "A minimum of one 2A:10-B:C rated portable fire extinguisher must be mounted within 25 feet of any cooking equipment. Inspected annually.",
+      "citation": "SFC 906.1",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "FM-105",
+      "title": "Generator Placement",
+      "description": "Portable generators must be positioned at least 10 feet from any structure, tent, or combustible material. Fuel storage limited to 10 gallons.",
+      "citation": "SFC 6107.4",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "FM-106",
+      "title": "Emergency Exit Clearance",
+      "description": "All food service establishments must maintain a clear, unobstructed path of egress with minimum 36-inch width at all times.",
+      "citation": "SFC 1031.2",
+      "applies_to": ["restaurant", "bakery", "cafe", "salon", "retail"],
+      "severity": "violation"
+    },
+    {
+      "id": "FM-107",
+      "title": "Occupancy Load Posting",
+      "description": "Establishments with occupancy exceeding 49 persons must post the maximum occupancy load as determined by the Fire Marshal.",
+      "citation": "SFC 1004.9",
+      "applies_to": ["restaurant", "cafe", "retail"],
+      "severity": "warning"
+    },
+    {
+      "id": "FM-108",
+      "title": "Ventilation Requirements",
+      "description": "Commercial kitchens must have a mechanical exhaust ventilation system providing a minimum of 150 CFM per linear foot of cooking equipment.",
+      "citation": "SFC 507.1",
+      "applies_to": ["restaurant", "bakery"],
+      "severity": "violation"
+    }
+  ]
+}

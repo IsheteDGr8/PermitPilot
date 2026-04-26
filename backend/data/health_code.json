@@ -1,0 +1,70 @@
+{
+  "agency": "Health Department",
+  "jurisdiction": "King County Public Health (Model)",
+  "rules": [
+    {
+      "id": "HC-101",
+      "title": "Gray Water Tank Requirement",
+      "description": "Any mobile food unit with open food preparation must have a pressurized gray water holding tank of at least 15 gallons capacity, with a shut-off valve.",
+      "citation": "Title 5, WAC 246-215-08510",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "HC-102",
+      "title": "Commissary Kitchen Agreement",
+      "description": "All mobile food units must have a signed agreement with an approved commissary kitchen for daily cleaning, food storage, and waste disposal.",
+      "citation": "WAC 246-215-08505",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "HC-103",
+      "title": "Food Handler Certification",
+      "description": "All employees who handle, prepare, or serve food must hold a valid Washington State Food Worker Card, renewed every 2 years. Cost: $10 per worker.",
+      "citation": "WAC 246-215-02115",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "HC-104",
+      "title": "Handwashing Station",
+      "description": "A separate, dedicated handwashing sink with hot and cold running water, soap, and paper towels must be accessible at all times during food preparation.",
+      "citation": "WAC 246-215-03300",
+      "applies_to": ["food_truck", "restaurant", "bakery", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "HC-105",
+      "title": "Restroom Access",
+      "description": "Mobile food units operating for more than 4 consecutive hours must provide or arrange access to a public or commercial restroom within 200 feet of the service location.",
+      "citation": "WAC 246-215-08520",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "warning"
+    },
+    {
+      "id": "HC-106",
+      "title": "Temperature Control",
+      "description": "Cold foods must be maintained at 41°F or below; hot foods at 135°F or above. A calibrated food thermometer must be available on-site.",
+      "citation": "WAC 246-215-03420",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "HC-107",
+      "title": "Health Permit Application",
+      "description": "A Food Service Establishment Permit must be obtained before commencing any food service operations. Application fee: $427 for mobile units, $575 for fixed establishments.",
+      "citation": "King County BOH Code 5.04",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "HC-108",
+      "title": "Annual Health Inspection",
+      "description": "All food service establishments are subject to unannounced inspections at least once per year. Establishments with critical violations may be inspected quarterly.",
+      "citation": "WAC 246-215-08700",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe"],
+      "severity": "info"
+    }
+  ]
+}

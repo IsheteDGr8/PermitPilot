@@ -1,0 +1,70 @@
+{
+  "agency": "Zoning Authority",
+  "jurisdiction": "City of Seattle (Model)",
+  "rules": [
+    {
+      "id": "ZA-101",
+      "title": "Park Proximity Restriction",
+      "description": "Mobile food units and food trucks shall not operate within 50 feet of a public park entrance, playground, or school property boundary.",
+      "citation": "SMC 15.17.005(A)",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "ZA-102",
+      "title": "Residential Buffer Zone",
+      "description": "No commercial food service operation may be conducted within 100 feet of a residentially-zoned parcel between the hours of 9:00 PM and 7:00 AM.",
+      "citation": "SMC 15.17.005(B)",
+      "applies_to": ["food_truck", "restaurant", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "ZA-103",
+      "title": "Commercial Zone Requirement",
+      "description": "Brick-and-mortar food service establishments require a C-1 (Neighborhood Commercial) or higher zoning classification. C-2 (General Commercial) is required for establishments exceeding 2,500 sq ft.",
+      "citation": "SMC 23.47A.004",
+      "applies_to": ["restaurant", "bakery", "cafe"],
+      "severity": "violation"
+    },
+    {
+      "id": "ZA-104",
+      "title": "Sidewalk Clearance",
+      "description": "Mobile vendors must maintain a minimum 6-foot clear pedestrian pathway on all sidewalks at all times.",
+      "citation": "SMC 15.17.010",
+      "applies_to": ["food_truck", "mobile_vendor", "retail_cart"],
+      "severity": "warning"
+    },
+    {
+      "id": "ZA-105",
+      "title": "Operating Hours",
+      "description": "Mobile food units in commercial zones (C-1, C-2) may operate between 6:00 AM and 10:00 PM. Extended hours require a Special Use Permit.",
+      "citation": "SMC 15.17.015",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "info"
+    },
+    {
+      "id": "ZA-106",
+      "title": "Signage Restrictions",
+      "description": "Exterior signage for commercial establishments shall not exceed 32 sq ft in C-1 zones or 64 sq ft in C-2 zones. Illuminated signs require separate electrical permits.",
+      "citation": "SMC 23.55.014",
+      "applies_to": ["restaurant", "retail", "salon", "bakery"],
+      "severity": "info"
+    },
+    {
+      "id": "ZA-107",
+      "title": "Parking Requirements",
+      "description": "Restaurants exceeding 1,500 sq ft must provide 1 off-street parking space per 200 sq ft of dining area, or pay into the city's parking mitigation fund.",
+      "citation": "SMC 23.54.015",
+      "applies_to": ["restaurant", "bakery", "cafe"],
+      "severity": "warning"
+    },
+    {
+      "id": "ZA-108",
+      "title": "Outdoor Seating Permit",
+      "description": "Any outdoor dining area on public right-of-way requires a Street Use Permit. Tables and chairs must be removed nightly unless a permanent installation permit is obtained.",
+      "citation": "SMC 15.04.030",
+      "applies_to": ["restaurant", "cafe", "bakery"],
+      "severity": "info"
+    }
+  ]
+}

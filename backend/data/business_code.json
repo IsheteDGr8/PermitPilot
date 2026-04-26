@@ -1,0 +1,70 @@
+{
+  "agency": "Business Licensing",
+  "jurisdiction": "City of Seattle (Model)",
+  "rules": [
+    {
+      "id": "LIC-101",
+      "title": "City Business License",
+      "description": "All businesses operating within city limits must obtain a City Business License before commencing operations. Annual fee: $110. Renewable annually.",
+      "citation": "SMC 6.20.010",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "salon", "retail", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "LIC-102",
+      "title": "State Business License (UBI)",
+      "description": "A Washington State Unified Business Identifier (UBI) number is required for all business entities. Obtained through the Secretary of State.",
+      "citation": "RCW 19.02",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "salon", "retail", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "LIC-103",
+      "title": "Workers Compensation Insurance",
+      "description": "Businesses with 1 or more employees (including owners in some structures) must carry Workers' Compensation insurance through L&I or a self-insured program.",
+      "citation": "RCW 51.12.010",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "salon", "retail"],
+      "severity": "violation"
+    },
+    {
+      "id": "LIC-104",
+      "title": "General Liability Insurance",
+      "description": "Commercial general liability insurance with a minimum coverage of $1,000,000 per occurrence is required for all food service and public-facing businesses.",
+      "citation": "SMC 6.20.050",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "salon", "retail"],
+      "severity": "violation"
+    },
+    {
+      "id": "LIC-105",
+      "title": "DBA Registration",
+      "description": "If operating under a trade name (DBA — 'Doing Business As'), the name must be registered with the county. Filing fee: $5.",
+      "citation": "RCW 19.80.010",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "salon", "retail", "mobile_vendor"],
+      "severity": "info"
+    },
+    {
+      "id": "LIC-106",
+      "title": "Sales Tax Registration",
+      "description": "Businesses selling tangible goods or prepared food must register for a Sales Tax Permit with the Department of Revenue. No fee.",
+      "citation": "RCW 82.32.030",
+      "applies_to": ["food_truck", "restaurant", "bakery", "cafe", "retail", "mobile_vendor"],
+      "severity": "violation"
+    },
+    {
+      "id": "LIC-107",
+      "title": "Liquor License",
+      "description": "Serving or selling alcoholic beverages requires a Washington State Liquor License. Processing time: 6-8 weeks. Application fee: $176.",
+      "citation": "RCW 66.24",
+      "applies_to": ["restaurant", "cafe", "bakery"],
+      "severity": "info"
+    },
+    {
+      "id": "LIC-108",
+      "title": "Mobile Food Unit Vendor License",
+      "description": "A separate Mobile Food Unit Vendor License is required in addition to the standard business license for all mobile food operations. Annual fee: $275.",
+      "citation": "SMC 6.310.020",
+      "applies_to": ["food_truck", "mobile_vendor"],
+      "severity": "violation"
+    }
+  ]
+}

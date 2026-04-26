@@ -1,0 +1,62 @@
+{
+  "agency": "Building Department",
+  "jurisdiction": "Seattle Department of Construction & Inspections (Model)",
+  "rules": [
+    {
+      "id": "BD-101",
+      "title": "Shore Power Connection",
+      "description": "If connecting to external grid power, the electrical connection must use a weatherproof NEMA-rated locking receptacle (L14-30 or higher).",
+      "citation": "SBC 3401.6",
+      "applies_to": ["food_truck"],
+      "severity": "warning"
+    },
+    {
+      "id": "BD-102",
+      "title": "Electrical Load Capacity",
+      "description": "Total connected electrical load must not exceed 200 amps for mobile units. Fixed establishments require a load calculation signed by a licensed electrician.",
+      "citation": "SBC 3401.7",
+      "applies_to": ["food_truck", "restaurant", "bakery", "salon", "retail"],
+      "severity": "violation"
+    },
+    {
+      "id": "BD-103",
+      "title": "Tenant Improvement Permit",
+      "description": "Any structural modification, plumbing change, or electrical alteration to an existing commercial space requires a Tenant Improvement (TI) permit. Review time: 4-8 weeks.",
+      "citation": "SBC 105.1",
+      "applies_to": ["restaurant", "bakery", "cafe", "salon", "retail"],
+      "severity": "violation"
+    },
+    {
+      "id": "BD-104",
+      "title": "ADA Compliance",
+      "description": "All customer-facing establishments must comply with ADA accessibility standards: 36-inch doorways, accessible restrooms, ramp access (max 1:12 slope).",
+      "citation": "SBC 1109",
+      "applies_to": ["restaurant", "bakery", "cafe", "salon", "retail"],
+      "severity": "violation"
+    },
+    {
+      "id": "BD-105",
+      "title": "Plumbing Requirements",
+      "description": "Commercial kitchens require a 3-compartment sink, separate handwash sink, and grease interceptor connected to the sanitary sewer.",
+      "citation": "SBC 2901",
+      "applies_to": ["restaurant", "bakery", "cafe"],
+      "severity": "violation"
+    },
+    {
+      "id": "BD-106",
+      "title": "HVAC Ventilation",
+      "description": "Commercial food preparation areas require mechanical ventilation with make-up air supply equal to at least 80% of exhaust volume.",
+      "citation": "SBC 2801",
+      "applies_to": ["restaurant", "bakery"],
+      "severity": "violation"
+    },
+    {
+      "id": "BD-107",
+      "title": "Signage Mounting",
+      "description": "Externally mounted signs exceeding 6 sq ft or 20 lbs require a Sign Installation Permit and structural engineering review.",
+      "citation": "SBC 3107.1",
+      "applies_to": ["restaurant", "retail", "salon", "bakery", "cafe"],
+      "severity": "info"
+    }
+  ]
+}
