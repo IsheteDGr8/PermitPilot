@@ -61,16 +61,22 @@ app.post('/api/parse-intake', async (req, res) => {
     User Description: "${description}"
     Return ONLY valid JSON. Do not include markdown formatting like \`\`\`json.`;
 
-    // Swapped to gemini-1.5-pro-latest to fix the 404 and use a new quota bucket
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`, {
+    // Using Groq (Llama 3) for lightning-fast, free extraction
+    const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" } // Forces perfect JSON!
       })
     });
 
     const data = await response.json();
+    const parsed = JSON.parse(data.choices[0].message.content);
 
     // FIXED: Safely check if Gemini actually returned candidates
     if (!data.candidates || data.candidates.length === 0) {
@@ -82,7 +88,7 @@ app.post('/api/parse-intake', async (req, res) => {
 
     // Clean up any accidental markdown formatting
     rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(rawText);
+    parsed = JSON.parse(rawText);
 
     console.log(`  [✅] Successfully extracted:`, parsed);
     res.json(parsed);
