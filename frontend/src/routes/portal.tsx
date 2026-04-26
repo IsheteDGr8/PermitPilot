@@ -265,7 +265,7 @@ function UserPortal() {
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                             <ListChecks size={13} style={{ color: pendingChecklistCount === 0 ? 'var(--color-success)' : 'var(--color-info)' }} />
                             {pendingChecklistCount === 0
-                              ? 'All tasks complete 🎉'
+                              ? 'All tasks complete'
                               : `${pendingChecklistCount} remaining task${pendingChecklistCount !== 1 ? 's' : ''}`}
                           </span>
                         )}

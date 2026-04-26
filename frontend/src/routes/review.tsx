@@ -247,9 +247,8 @@ function ReviewPage() {
                 }}>
                   {result.overall_status === 'all_clear' ? <><CheckCircle2 size={16} /> All Clear</> : <><AlertTriangle size={16} /> {conflictCount} Conflict{conflictCount !== 1 ? 's' : ''} Detected</>}
                 </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                  <Clock size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.25rem' }} />
-                  Evaluated in {result.evaluation_time_seconds}s
+                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.3rem' }}>
+                  <Clock size={12} /> Evaluated in {result.evaluation_time_seconds}s
                 </p>
               </div>
             </div>
@@ -278,23 +277,9 @@ function ReviewPage() {
 
         {/* Cross-Agent Conflicts Banner */}
         {result.cross_agent_conflicts?.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{ marginBottom: '2rem' }}
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={{ marginBottom: '2rem' }}>
             {result.cross_agent_conflicts.map((conflict, i) => (
-              <div
-                key={i}
-                className="glass-card"
-                style={{
-                  padding: '1.25rem 1.5rem',
-                  marginBottom: '0.75rem',
-                  borderColor: 'rgba(239, 68, 68, 0.3)',
-                  background: 'var(--color-danger-bg)', // Fixed for light mode
-                }}
-              >
+              <div key={i} className="glass-card" style={{ padding: '1.25rem 1.5rem', marginBottom: '0.75rem', borderColor: 'var(--color-danger)', background: 'var(--color-danger-bg)' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                   <AlertTriangle size={20} style={{ color: 'var(--color-danger)', flexShrink: 0, marginTop: '2px' }} />
                   <div style={{ flex: 1 }}>
@@ -329,42 +314,13 @@ function ReviewPage() {
             const expanded = expandedAgents.has(i)
 
             return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="glass-card"
-                style={{ overflow: 'hidden' }}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="glass-card" style={{ overflow: 'hidden' }}>
                 {/* Agent Header */}
                 <button
                   onClick={() => toggleAgent(i)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '1rem 1.25rem',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'inherit',
-                    textAlign: 'left',
-                  }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', textAlign: 'left' }}
                 >
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: 'var(--radius-sm)',
-                      display: 'grid',
-                      placeItems: 'center',
-                      background: `${color}15`,
-                      border: `1px solid ${color}30`,
-                      flexShrink: 0,
-                    }}
-                  >
+                  <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', display: 'grid', placeItems: 'center', background: `${color}15`, border: `1px solid ${color}30`, flexShrink: 0 }}>
                     <Icon size={18} style={{ color }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -382,13 +338,7 @@ function ReviewPage() {
                 {/* Expanded Details */}
                 <AnimatePresence>
                   {expanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      style={{ overflow: 'hidden' }}
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
                       <div style={{ padding: '0 1.25rem 1.25rem', borderTop: '1px solid var(--color-border)' }}>
                         {/* Findings */}
                         {agent.findings?.length > 0 && (
@@ -397,27 +347,15 @@ function ReviewPage() {
                               Findings
                             </h4>
                             {agent.findings.map((f, fi) => (
-                              <div
-                                key={fi}
-                                style={{
-                                  padding: '0.6rem 0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: f.result === 'fail' ? 'var(--color-danger-bg)' : f.result === 'warning' ? 'var(--color-warning-bg)' : 'var(--color-bg-elevated)',
-                                  border: `1px solid ${f.result === 'fail' ? 'rgba(239,68,68,0.2)' : f.result === 'warning' ? 'rgba(245,158,11,0.2)' : 'var(--color-border)'}`,
-                                  marginBottom: '0.4rem',
-                                  fontSize: '0.85rem',
-                                }}
-                              >
+                              <div key={fi} style={{ padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-sm)', background: f.result === 'fail' ? 'var(--color-danger-bg)' : f.result === 'warning' ? 'var(--color-warning-bg)' : 'var(--color-bg-elevated)', border: `1px solid ${f.result === 'fail' ? 'var(--color-danger)' : f.result === 'warning' ? 'var(--color-warning)' : 'var(--color-border)'}`, marginBottom: '0.4rem', fontSize: '0.85rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                                   <span style={{ fontWeight: 600 }}>{f.rule_title || f.rule_id}</span>
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
-                                    {f.citation}
-                                  </span>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>{f.citation}</span>
                                 </div>
                                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.83rem' }}>{f.explanation}</p>
                                 {f.cost && (
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-warning)', marginTop: '0.25rem', display: 'inline-block' }}>
-                                    💰 Est. cost: ${f.cost.toLocaleString()}
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--color-warning)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                    <DollarSign size={12} /> Est. cost: ${f.cost.toLocaleString()}
                                   </span>
                                 )}
                               </div>
@@ -432,16 +370,7 @@ function ReviewPage() {
                               Conflicts & Alternatives
                             </h4>
                             {agent.conflicts.map((c, ci) => (
-                              <div
-                                key={ci}
-                                style={{
-                                  padding: '0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: 'var(--color-danger-bg)',
-                                  border: '1px solid rgba(239,68,68,0.2)',
-                                  marginBottom: '0.4rem',
-                                }}
-                              >
+                              <div key={ci} style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger)', marginBottom: '0.4rem' }}>
                                 <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>{c.description}</p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                   {c.alternatives?.map((alt, ai) => (
@@ -456,11 +385,11 @@ function ReviewPage() {
                           </div>
                         )}
 
-                        {/* NEW: PROPOSE RESOLUTION UI */}
+                        {/* PROPOSE RESOLUTION UI */}
                         {['conflict', 'needs_info', 'needs-info', 'needs_more_info'].includes(agent.status) && (
-                          <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'var(--color-bg)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-accent)' }}>
-                            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-accent)' }}>
-                              💬 Negotiate with Agent
+                          <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <MessageSquare size={14} /> Negotiate with Agent
                             </h4>
                             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '0.75rem' }}>
                               Propose a fix or provide the missing information to clear this status.
@@ -469,7 +398,7 @@ function ReviewPage() {
                               value={resolutionText[agent.agent] || ''}
                               onChange={(e) => setResolutionText({ ...resolutionText, [agent.agent]: e.target.value })}
                               placeholder="e.g., I will use electric appliances instead of propane..."
-                              style={{ width: '100%', minHeight: '60px', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-bg-elevated)', color: 'var(--color-text-primary)', marginBottom: '0.75rem', fontSize: '0.9rem', outline: 'none', resize: 'vertical' }}
+                              style={{ width: '100%', minHeight: '60px', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', marginBottom: '0.75rem', fontSize: '0.9rem', outline: 'none', resize: 'vertical' }}
                             />
                             <button
                               onClick={() => handleResolve(agent.agent)}
@@ -477,7 +406,7 @@ function ReviewPage() {
                               className="btn-primary"
                               style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', opacity: (!resolutionText[agent.agent] || resolvingAgent === agent.agent) ? 0.5 : 1 }}
                             >
-                              {resolvingAgent === agent.agent ? 'Agent evaluating...' : 'Submit to Agent'}
+                              {resolvingAgent === agent.agent ? 'Evaluating...' : 'Submit to Agent'}
                             </button>
                           </div>
                         )}
@@ -489,36 +418,14 @@ function ReviewPage() {
                               Requirements
                             </h4>
                             {agent.requirements.map((r, ri) => (
-                              <div
-                                key={ri}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'flex-start',
-                                  gap: '0.5rem',
-                                  padding: '0.5rem 0.75rem',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: 'var(--color-bg-elevated)',
-                                  border: '1px solid var(--color-border)',
-                                  marginBottom: '0.3rem',
-                                  fontSize: '0.85rem',
-                                }}
-                              >
-                                <div style={{
-                                  width: '6px', height: '6px', borderRadius: '50%', marginTop: '6px', flexShrink: 0,
-                                  background: r.priority === 'required' ? 'var(--color-danger)' : r.priority === 'recommended' ? 'var(--color-warning)' : 'var(--color-info)',
-                                }} />
+                              <div key={ri} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', marginTop: '6px', flexShrink: 0, background: r.priority === 'required' ? 'var(--color-danger)' : r.priority === 'recommended' ? 'var(--color-warning)' : 'var(--color-info)' }} />
                                 <div style={{ flex: 1 }}>
                                   <span>{r.action}</span>
                                   <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                    {r.estimated_cost != null && <span>💰 ${r.estimated_cost.toLocaleString()}</span>}
-                                    {r.estimated_time && <span>⏱️ {r.estimated_time}</span>}
-                                    <span style={{
-                                      padding: '0.1rem 0.4rem',
-                                      borderRadius: '4px',
-                                      background: r.priority === 'required' ? 'var(--color-danger-bg)' : r.priority === 'recommended' ? 'var(--color-warning-bg)' : 'var(--color-info-bg)',
-                                      color: r.priority === 'required' ? 'var(--color-danger)' : r.priority === 'recommended' ? 'var(--color-warning)' : 'var(--color-info)',
-                                      fontWeight: 600,
-                                    }}>
+                                    {r.estimated_cost != null && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><DollarSign size={12} /> ${r.estimated_cost.toLocaleString()}</span>}
+                                    {r.estimated_time && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Clock size={12} /> {r.estimated_time}</span>}
+                                    <span style={{ padding: '0.1rem 0.4rem', borderRadius: '4px', background: r.priority === 'required' ? 'var(--color-danger-bg)' : r.priority === 'recommended' ? 'var(--color-warning-bg)' : 'var(--color-info-bg)', color: r.priority === 'required' ? 'var(--color-danger)' : r.priority === 'recommended' ? 'var(--color-warning)' : 'var(--color-info)', fontWeight: 600 }}>
                                       {r.priority}
                                     </span>
                                   </div>
@@ -538,70 +445,36 @@ function ReviewPage() {
 
         {/* INTERACTIVE CHECKLIST PREVIEW */}
         {result.checklist?.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-              📋 Dependency-Ordered Checklist
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileText size={18} style={{ color: 'var(--color-text-muted)' }} /> Dependency-Ordered Checklist
             </h2>
             <div className="glass-card" style={{ padding: '1.25rem' }}>
               {result.checklist.map((item, i) => {
                 const isDone = item.status === 'completed';
                 return (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      padding: '0.75rem 0',
-                      borderBottom: i < result.checklist.length - 1 ? '1px solid var(--color-border-subtle)' : 'none',
-                      opacity: isDone ? 0.6 : 1, // Dims the item when done
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem 0', borderBottom: i < result.checklist.length - 1 ? '1px solid var(--color-border-subtle)' : 'none', opacity: isDone ? 0.5 : 1, transition: 'opacity 0.2s ease' }}>
                     <button
                       onClick={() => handleToggleChecklist(i)}
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        display: 'grid',
-                        placeItems: 'center',
-                        background: isDone ? 'var(--color-success)' : 'var(--color-accent-glow)',
-                        border: isDone ? 'none' : '1px solid rgba(124,92,252,0.3)',
-                        color: isDone ? 'white' : 'var(--color-accent)',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        transition: 'all 0.2s ease'
-                      }}
+                      style={{ width: '24px', height: '24px', borderRadius: '4px', display: 'grid', placeItems: 'center', background: isDone ? 'var(--color-success)' : 'var(--color-bg-elevated)', border: isDone ? 'none' : '1px solid var(--color-border)', color: isDone ? 'var(--color-bg)' : 'var(--color-text-muted)', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s ease' }}
                     >
-                      {isDone ? <Check size={16} strokeWidth={3} /> : <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{item.step}</span>}
+                      {isDone ? <Check size={14} strokeWidth={3} /> : <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>{item.step}</span>}
                     </button>
                     <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleToggleChecklist(i)}>
-                      <p style={{
-                        fontSize: '0.9rem',
-                        fontWeight: 500,
-                        textDecoration: isDone ? 'line-through' : 'none',
-                        color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
-                        transition: 'all 0.2s ease'
-                      }}>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 500, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)', transition: 'color 0.2s ease' }}>
                         {item.action}
                       </p>
                       <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span>{item.source_agent}</span>
-                        {item.estimated_cost != null && <span>💰 ${item.estimated_cost.toLocaleString()}</span>}
-                        {item.estimated_time && <span>⏱️ {item.estimated_time}</span>}
+                        <span style={{ fontWeight: 600 }}>{item.source_agent}</span>
+                        {item.estimated_cost != null && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><DollarSign size={12} /> ${item.estimated_cost.toLocaleString()}</span>}
+                        {item.estimated_time && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Clock size={12} /> {item.estimated_time}</span>}
 
-                        {/* THE AUTO-FILL BUTTON */}
                         {!isDone && (
                           <button
                             onClick={(e) => { e.stopPropagation(); openDocModal(item); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'var(--color-accent-glow)', color: 'var(--color-accent)', border: '1px solid rgba(124,92,252,0.2)', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto', transition: 'background 0.2s' }}
                           >
-                            <Sparkles size={12} /> Auto-Fill Form
+                            <Sparkles size={12} style={{ color: 'var(--color-accent)' }} /> Auto-Fill Form
                           </button>
                         )}
                       </div>
@@ -611,17 +484,17 @@ function ReviewPage() {
               })}
 
               {/* Totals */}
-              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginBottom: '0.5rem' }}>
-                  <span>Maximum Estimated Cost</span>
-                  <span style={{ color: 'var(--color-warning)', fontSize: '1.1rem' }}>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>Total Estimated Cost</span>
+                  <span style={{ color: 'var(--color-text-primary)' }}>
                     ${result.total_estimated_cost?.toLocaleString() || '0'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                  <span>Maximum Time of Issuance</span>
-                  <span style={{ color: 'var(--color-accent)', fontSize: '1rem' }}>
-                    ~{Math.max(2, Math.ceil(((result.total_estimated_cost || 0) / 1000) * 0.5))} weeks
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, fontSize: '0.9rem' }}>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>Estimated Time of Issuance</span>
+                  <span style={{ color: 'var(--color-text-primary)' }}>
+                    Up to {Math.max(4, Math.ceil((result.checklist?.length || 0) * 1.5))} Weeks
                   </span>
                 </div>
               </div>
@@ -635,89 +508,90 @@ function ReviewPage() {
             <ArrowLeft size={16} /> {backText}
           </Link>
         </div>
-
-        {/* DOCUMENT AUTO-FILL MODAL */}
-        <AnimatePresence>
-          {docModalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '1rem' }}
-              onClick={() => setDocModalOpen(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-                onClick={e => e.stopPropagation()}
-                className="glass-card"
-                style={{ width: '100%', maxWidth: '500px', background: 'var(--color-bg-card)', overflow: 'hidden' }}
-              >
-                {/* Header */}
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Sparkles size={18} style={{ color: 'var(--color-accent)' }} /> Permit Auto-Fill
-                    </h3>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: '0.2rem' }}>{activeDoc?.action}</p>
-                  </div>
-                  <button onClick={() => setDocModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}><X size={20} /></button>
-                </div>
-
-                {/* Body */}
-                <div style={{ padding: '1.5rem', background: 'var(--color-bg)' }}>
-
-                  {/* Fake Progress Bar */}
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: docProgress === 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>
-                      <span>{docProgress === 100 ? 'Document Generated' : 'AI analyzing context and mapping fields...'}</span>
-                      <span>{docProgress}%</span>
-                    </div>
-                    <div style={{ width: '100%', height: '6px', background: 'var(--color-border)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${docProgress}%`, height: '100%', background: docProgress === 100 ? 'var(--color-success)' : 'var(--color-accent)', transition: 'width 0.3s ease' }} />
-                    </div>
-                  </div>
-
-                  {/* Extracted Fields */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', opacity: docProgress > 30 ? 1 : 0, transition: 'opacity 0.5s' }}>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500 }}><User size={14} style={{ color: 'var(--color-success)' }} /> Owner Name</div>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{ownerName}</span>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500 }}><Building size={14} style={{ color: 'var(--color-success)' }} /> Business Name</div>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{intake?.business_info?.business_name || 'Demo Business'}</span>
-                    </div>
-
-                    {/* AI Estimated Field */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-accent-glow)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(124,92,252,0.3)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-accent)' }}>
-                        <Wand2 size={14} /> Tax Classification (Estimated)
-                      </div>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--color-accent)' }}>LLC / Sole Prop</span>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Footer Actions */}
-                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <button onClick={() => setDocModalOpen(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
-                    Cancel
-                  </button>
-                  <button onClick={handleDownloadEmptyForm} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
-                    <File size={16} /> Blank Form
-                  </button>
-                  <button onClick={handleDownloadForm} disabled={docProgress < 100} className="btn-primary" style={{ flex: 2, justifyContent: 'center', opacity: docProgress < 100 ? 0.5 : 1 }}>
-                    <Download size={16} /> Auto-Filled Draft
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </main>
 
       <SiteFooter />
+
+      {/* DOCUMENT AUTO-FILL MODAL */}
+      <AnimatePresence>
+        {docModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', padding: '1rem' }}
+            onClick={() => setDocModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="glass-card"
+              style={{ width: '100%', maxWidth: '500px', background: 'var(--color-bg-card)', overflow: 'hidden', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+            >
+              {/* Header */}
+              <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sparkles size={18} style={{ color: 'var(--color-text-primary)' }} /> Form Auto-Fill
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginTop: '0.2rem' }}>{activeDoc?.action}</p>
+                </div>
+                <button onClick={() => setDocModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '1.5rem', background: 'var(--color-bg)' }}>
+
+                {/* Progress Bar */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: docProgress === 100 ? 'var(--color-success)' : 'var(--color-text-primary)' }}>
+                    <span>{docProgress === 100 ? 'Document Generated' : 'Analyzing context and mapping fields...'}</span>
+                    <span>{docProgress}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '4px', background: 'var(--color-bg-elevated)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${docProgress}%`, height: '100%', background: docProgress === 100 ? 'var(--color-success)' : 'var(--color-text-primary)', transition: 'width 0.3s ease' }} />
+                  </div>
+                </div>
+
+                {/* Extracted Fields */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', opacity: docProgress > 30 ? 1 : 0, transition: 'opacity 0.5s' }}>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500 }}><User size={14} style={{ color: 'var(--color-text-muted)' }} /> Owner Name</div>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)', fontWeight: 500 }}>{ownerName}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500 }}><Building size={14} style={{ color: 'var(--color-text-muted)' }} /> Business Name</div>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)', fontWeight: 500 }}>{intake?.business_info?.business_name || 'Demo Business'}</span>
+                  </div>
+
+                  {/* AI Estimated Field */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-secondary)' }}>
+                      <Wand2 size={14} /> Tax Classification (Estimated)
+                    </div>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)', fontWeight: 500 }}>LLC / Sole Prop</span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button onClick={() => setDocModalOpen(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
+                  Cancel
+                </button>
+                <button onClick={handleDownloadEmptyForm} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>
+                  <File size={16} /> Blank Form
+                </button>
+                <button onClick={handleDownloadForm} disabled={docProgress < 100} className="btn-primary" style={{ flex: 2, justifyContent: 'center' }}>
+                  <Download size={16} /> Auto-Filled Draft
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   )
 }
