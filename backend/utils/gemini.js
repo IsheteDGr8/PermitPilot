@@ -13,9 +13,8 @@ function getClient() {
   return genAI;
 }
 
-// Model selection: gemini-1.5-flash has the most generous and stable free-tier quotas
-// You can override via GEMINI_MODEL env var (e.g., gemini-2.0-flash, gemini-2.5-flash)
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+// Model selection: You can override via GEMINI_MODEL env var
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 /**
  * Sleep helper for retry backoff
